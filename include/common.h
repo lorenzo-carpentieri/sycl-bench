@@ -20,6 +20,7 @@
 #include "benchmark_traits.h"
 #include "prefetched_buffer.h"
 #include "time_metrics.h"
+#include "queue_macro.h"
 
 #ifdef NV_ENERGY_MEAS
 #include "nv_energy_meas.h"
@@ -154,7 +155,7 @@ private:
 
 class BenchmarkApp {
   BenchmarkArgs args;
-  sycl::queue device_queue;
+  selected_queue device_queue;
   std::unordered_set<std::string> benchmark_names;
 
 public:

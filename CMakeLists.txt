@@ -25,6 +25,8 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 include_directories(${CMAKE_SOURCE_DIR}/polybench/common)
 
 set(SYCL_IMPL "" CACHE STRING "Select SYCL implementation [hipSYCL | LLVM | LLVM-CUDA | triSYCL]")
+option(ENABLED_SYNERGY "Enable SYnergy support" OFF)
+
 
 set(supported_implementations
   hipSYCL
@@ -105,8 +107,12 @@ set(benchmarks
 
 foreach(benchmark IN LISTS benchmarks)
   get_filename_component(target ${benchmark} NAME_WE)
-
+  
   add_executable(${target} ${benchmark})
+  if(ENABLED_SYNERGY)
+    target_compile_definitions(${target} PUBLIC __ENABLED_SYNERGY)
+    target_link_libraries(${target} PUBLIC synergy)
+  endif()
 
   if(SYCL_IMPL STREQUAL "hipSYCL")
     add_sycl_to_target(TARGET ${target} SOURCES ${benchmark})
@@ -132,6 +138,8 @@ endforeach(benchmark)
 
 # The "compiletime" target should only be used in the context of the compile time evaluation script
 # set_target_properties(compiletime PROPERTIES EXCLUDE_FROM_ALL 1)
-
+if(ENABLED_SYNERGY)
+  add_subdirectory(SYnergy)
+endif()
 install(PROGRAMS bin/run-suite DESTINATION bin/)
 install(FILES ${PROJECT_SOURCE_DIR}/Brommy.bmp DESTINATION share/)

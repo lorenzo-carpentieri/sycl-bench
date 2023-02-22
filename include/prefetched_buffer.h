@@ -1,6 +1,7 @@
 #pragma once
 #include <memory>
 #include <sycl/sycl.hpp>
+#include "queue_macro.h"
 
 template <class AccType>
 class InitializationDummyKernel {
@@ -16,7 +17,7 @@ private:
 class InitializationDummyKernel2;
 
 template <class BufferType>
-inline void forceDataTransfer(sycl::queue& q, BufferType b) {
+inline void forceDataTransfer(selected_queue& q, BufferType b) {
   q.submit([&](sycl::handler& cgh) {
     auto acc = b.template get_access<sycl::access::mode::read>(cgh);
     cgh.single_task(InitializationDummyKernel{acc});
@@ -25,7 +26,7 @@ inline void forceDataTransfer(sycl::queue& q, BufferType b) {
 }
 
 template <class BufferType>
-inline void forceDataAllocation(sycl::queue& q, BufferType b) {
+inline void forceDataAllocation(selected_queue& q, BufferType b) {
   q.submit([&](sycl::handler& cgh) {
     auto acc = b.template get_access<sycl::access::mode::discard_write>(cgh);
     cgh.single_task(InitializationDummyKernel{acc});
@@ -36,17 +37,17 @@ inline void forceDataAllocation(sycl::queue& q, BufferType b) {
 template <class T, int Dimensions = 1>
 class PrefetchedBuffer {
 public:
-  void initialize(sycl::queue& q, sycl::range<Dimensions> r) {
+  void initialize(selected_queue& q, sycl::range<Dimensions> r) {
     buff = std::make_shared<sycl::buffer<T, Dimensions>>(r);
     forceDataAllocation(q, *buff);
   }
 
-  void initialize(sycl::queue& q, T* data, sycl::range<Dimensions> r) {
+  void initialize(selected_queue& q, T* data, sycl::range<Dimensions> r) {
     buff = std::make_shared<sycl::buffer<T, Dimensions>>(data, r);
     forceDataTransfer(q, *buff);
   }
 
-  void initialize(sycl::queue& q, const T* data, sycl::range<Dimensions> r) {
+  void initialize(selected_queue& q, const T* data, sycl::range<Dimensions> r) {
     buff = std::make_shared<sycl::buffer<T, Dimensions>>(data, r);
     forceDataTransfer(q, *buff);
   }

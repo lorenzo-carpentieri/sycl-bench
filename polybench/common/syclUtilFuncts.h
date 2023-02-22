@@ -2,9 +2,10 @@
 #define SYCL_UTIL_FUNCTS_H
 
 #include <sycl/sycl.hpp>
+#include "../../include/queue_macro.h"
 
 template <typename T, int Dims>
-void initDeviceBuffer(sycl::queue& queue, sycl::buffer<T, Dims>& buffer, T* data) {
+void initDeviceBuffer(selected_queue& queue, sycl::buffer<T, Dims>& buffer, T* data) {
 	using namespace sycl;
 
 	queue.submit([&](handler& cgh) {
