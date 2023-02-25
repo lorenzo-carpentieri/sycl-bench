@@ -27,7 +27,7 @@ class A{
 class MyBench{
     public:
         MyBench(){};
-        void run(std::vector<sycl::event>& events,synergy::queue q ) {
+        void run(std::vector<sycl::event>& events,synergy::queue& q ) {
             std::vector<int> a(N);
             std::fill(a.begin(), a.end(), 1);
             
