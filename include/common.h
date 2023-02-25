@@ -81,7 +81,7 @@ public:
         time_metrics.addTimingResult("run-time", std::chrono::duration_cast<std::chrono::nanoseconds>(after - before));
 
         if(detail::BenchmarkTraits<Benchmark>::supportsQueueProfiling) {
-#if defined(SYCL_BENCH_ENABLE_QUEUE_PROFILING)
+#if (SYCL_BENCH_ENABLE_QUEUE_PROFILING==1)
           // TODO: We might also want to consider the "command_submit" time.
           std::chrono::nanoseconds total_time{0};
           for(auto& e : run_events) {
@@ -91,29 +91,23 @@ public:
           }
           time_metrics.addTimingResult("kernel-time", total_time);
 #else
-          int i = 0;
-          for(sycl::event& e : run_events) {
-            double energy = args.device_queue.kernel_energy_consumption(e);
-            // args.result_consumer->consumeResult("Energy kernel " + std::to_string(i), std::to_string(energy), "[J]");
-            std::cout<< "Energy kernel " << i << ": " << energy << std::endl; 
-            i++;
-          }
-          time_metrics.markAsUnavailable("kernel-time");
+        time_metrics.markAsUnavailable("kernel-time");
 #endif
+
         } else {
-           int i = 0;
-          for(sycl::event& e : run_events) {
-            double energy = args.device_queue.kernel_energy_consumption(e);
-            // args.result_consumer->consumeResult("Energy kernel " + std::to_string(i), std::to_string(energy), "[J]");
-            std::cout<< "Energy kernel " << i << ": " << energy << std::endl; 
-            i++;
-          }
           time_metrics.markAsUnavailable("kernel-time");
         }
-
-        #ifdef __ENABLED_SYNERGY
-          
-        #endif
+if(detail::BenchmarkTraits<Benchmark>::supportsQueueProfiling) {
+#ifdef __ENABLED_SYNERGY
+  int i = 0;
+  for(sycl::event& e : run_events) {
+    double energy = args.device_queue.kernel_energy_consumption(e);
+    args.result_consumer->consumeResult("Energy kernel " + std::to_string(i), std::to_string(energy), "[J]");
+    // std::cout<< "Energy kernel " << i << ": " << energy << std::endl; 
+    i++;
+  }
+#endif
+}
 
         if constexpr(detail::BenchmarkTraits<Benchmark>::hasVerify) {
           if(args.verification.range.size() > 0) {

@@ -26,6 +26,8 @@ include_directories(${CMAKE_SOURCE_DIR}/polybench/common)
 
 set(SYCL_IMPL "" CACHE STRING "Select SYCL implementation [hipSYCL | LLVM | LLVM-CUDA | triSYCL]")
 option(ENABLED_SYNERGY "Enable SYnergy support" OFF)
+option(ENABLED_TIME_EVENT_PROFILING "Enable time profiling with sycl event" OFF)
+
 
 
 set(supported_implementations
@@ -114,9 +116,11 @@ foreach(benchmark IN LISTS benchmarks)
   if(ENABLED_SYNERGY)
     target_compile_definitions(${target} PUBLIC __ENABLED_SYNERGY)
     target_link_libraries(${target} PUBLIC synergy)
-    
   endif()
-  target_compile_definitions(${target} PUBLIC SYCL_BENCH_ENABLE_QUEUE_PROFILING=0)
+
+  if(ENABLED_TIME_EVENT_PROFILING)
+    target_compile_definitions(${target} PUBLIC SYCL_BENCH_ENABLE_QUEUE_PROFILING=1)
+  endif()
 
   if(SYCL_IMPL STREQUAL "hipSYCL")
     add_sycl_to_target(TARGET ${target} SOURCES ${benchmark})

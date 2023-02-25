@@ -1,4 +1,5 @@
-#include <synergy.hpp>
+#ifdef __ENABLED_SYNERGY
+    #include <synergy.hpp>
 
 #define N 100000
 template<typename Bench>
@@ -54,3 +55,5 @@ int main(){
     
     A<MyBench>(MyBench{}).run();
 }
+
+#endif
