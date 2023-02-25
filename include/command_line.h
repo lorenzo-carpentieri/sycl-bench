@@ -157,7 +157,7 @@ public:
     std::size_t num_runs = cli_parser.getOrDefault<std::size_t>("--num-runs", 5);
 
     std::string device_type = cli_parser.getOrDefault<std::string>("--device", "default");
-    // TODO: remove queue with macro to specify synergy or sycl queue
+    //TODO: add --core_freq and --memory_freq
     selected_queue q = getQueue(device_type);
 
     bool verification_enabled = true;
@@ -186,7 +186,6 @@ private:
       // as the target file name
       return std::shared_ptr<ResultConsumer>{new AppendingCsvResultConsumer{result_consumer_name}};
   }
-  //TODO: sostituire sycl selected_queue con una macro che può essere una synergy selected_queue o una sycl selected_queue
   selected_queue getQueue(const std::string& device_type) const {
     const auto getQueueProperties = [&]() -> sycl::property_list {
 #if defined(SYCL_BENCH_ENABLE_QUEUE_PROFILING)
@@ -194,12 +193,13 @@ private:
 #endif
       return {};
     };
-// TODO: creare una macro che mette la synergy queue qunado synergy è specificato altrimenti usare la semplice coda SYCL 
 #if defined(__LLVM_SYCL_CUDA__)
     if(device_type != "gpu") {
       throw std::invalid_argument{"Only the 'gpu' device is supported on LLVM CUDA"};
     }
-    return selected_queue{};
+    // return sycl::queue(sycl::gpu_selector_v, sycl::property::queue::enable_profiling{});
+    return selected_queue();
+  
 #endif
     #ifndef __ENABLED_SYNERGY
       if(device_type == "cpu") {

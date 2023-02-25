@@ -91,11 +91,29 @@ public:
           }
           time_metrics.addTimingResult("kernel-time", total_time);
 #else
+          int i = 0;
+          for(sycl::event& e : run_events) {
+            double energy = args.device_queue.kernel_energy_consumption(e);
+            // args.result_consumer->consumeResult("Energy kernel " + std::to_string(i), std::to_string(energy), "[J]");
+            std::cout<< "Energy kernel " << i << ": " << energy << std::endl; 
+            i++;
+          }
           time_metrics.markAsUnavailable("kernel-time");
 #endif
         } else {
+           int i = 0;
+          for(sycl::event& e : run_events) {
+            double energy = args.device_queue.kernel_energy_consumption(e);
+            // args.result_consumer->consumeResult("Energy kernel " + std::to_string(i), std::to_string(energy), "[J]");
+            std::cout<< "Energy kernel " << i << ": " << energy << std::endl; 
+            i++;
+          }
           time_metrics.markAsUnavailable("kernel-time");
         }
+
+        #ifdef __ENABLED_SYNERGY
+          
+        #endif
 
         if constexpr(detail::BenchmarkTraits<Benchmark>::hasVerify) {
           if(args.verification.range.size() > 0) {
