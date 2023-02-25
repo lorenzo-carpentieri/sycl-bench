@@ -198,7 +198,7 @@ private:
       throw std::invalid_argument{"Only the 'gpu' device is supported on LLVM CUDA"};
     }
     // return sycl::queue(sycl::gpu_selector_v, sycl::property::queue::enable_profiling{});
-    return selected_queue();
+    return selected_queue(CUDASelector, sycl::property::queue::enable_profiling{});
   
 #endif
     #ifndef __ENABLED_SYNERGY
