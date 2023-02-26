@@ -1,6 +1,12 @@
 #ifndef BENCHMARK_COMMAND_LINE_HPP
 #define BENCHMARK_COMMAND_LINE_HPP
 
+#if defined(SYCL_BENCH_ENABLE_QUEUE_PROFILING) || defined(__ENABLED_SYNERGY)  
+    #define queueProperties sycl::property::queue::enable_profiling{}
+#else
+    #define queueProperties {}
+#endif
+
 #include "result_consumer.h"
 #include <iostream>
 #include <memory>
@@ -155,10 +161,18 @@ public:
     std::size_t size = cli_parser.getOrDefault<std::size_t>("--size", 3072);
     std::size_t local_size = cli_parser.getOrDefault<std::size_t>("--local", 256);
     std::size_t num_runs = cli_parser.getOrDefault<std::size_t>("--num-runs", 5);
+    #ifdef __ENABLED_SYNERGY
+      synergy::frequency core_freq = cli_parser.getOrDefault<synergy::frequency>("--core-freq", 0);
+      synergy::frequency memory_freq = cli_parser.getOrDefault<synergy::frequency>("--memory-freq", 0);
+    #endif
+
 
     std::string device_type = cli_parser.getOrDefault<std::string>("--device", "default");
-    //TODO: add --core_freq and --memory_freq
+    
     selected_queue q = getQueue(device_type);
+    #ifdef __ENABLED_SYNERGY
+      q.set_target_frequencies(memory_freq, core_freq);
+    #endif
 
     bool verification_enabled = true;
     if(cli_parser.isFlagSet("--no-verification"))
@@ -186,36 +200,31 @@ private:
       // as the target file name
       return std::shared_ptr<ResultConsumer>{new AppendingCsvResultConsumer{result_consumer_name}};
   }
-  selected_queue getQueue(const std::string& device_type) const {
-    const auto getQueueProperties = [&]() -> sycl::property_list {
-#if defined(SYCL_BENCH_ENABLE_QUEUE_PROFILING)
-      return sycl::property::queue::enable_profiling{};
-#endif
-      return {};
-    };
+    selected_queue getQueue(const std::string& device_type) const {
 #if defined(__LLVM_SYCL_CUDA__)
     if(device_type != "gpu") {
       throw std::invalid_argument{"Only the 'gpu' device is supported on LLVM CUDA"};
     }
-    // return sycl::queue(sycl::gpu_selector_v, sycl::property::queue::enable_profiling{});
-    return selected_queue(CUDASelector, sycl::property::queue::enable_profiling{});
+    
+    return selected_queue(CUDASelector,queueProperties);
+
   
 #endif
     #ifndef __ENABLED_SYNERGY
       if(device_type == "cpu") {
-        return sycl::queue{sycl::cpu_selector_v, getQueueProperties()};
+        return sycl::queue{sycl::cpu_selector_v, queueProperties};
       } else if(device_type == "gpu") {
-        return sycl::queue{sycl::gpu_selector_v, getQueueProperties()};
+        return sycl::queue{sycl::gpu_selector_v, queueProperties};
       } else if(device_type == "default") {
-        return sycl::queue{getQueueProperties()};
+        return sycl::queue{queueProperties};
       } else {
         throw std::invalid_argument{"unknown device type: " + device_type};
       }
     #else
       if(device_type == "gpu") {
-        return selected_queue{};
+        return selected_queue{queueProperties};
       } else if(device_type == "default") {
-        return selected_queue{};
+        return selected_queue{queueProperties};
       } else {
         throw std::invalid_argument{"unknown device type: " + device_type};
       }

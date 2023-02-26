@@ -63,7 +63,6 @@ set(benchmarks
   micro/local_mem.cpp
   single-kernel/median.cpp
   # single-kernel/scalar_prod.cpp
-  single-kernel/prova.cpp
 
   single-kernel/sobel.cpp
   single-kernel/sobel5.cpp
