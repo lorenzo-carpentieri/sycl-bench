@@ -52,7 +52,7 @@ void syrk(DATA_TYPE* A, DATA_TYPE* C, size_t size) {
 
 class Polybench_Syrk {
   public:
-	Polybench_Syrk(const BenchmarkArgs& args) : args(args), size(args.problem_size) {}
+	Polybench_Syrk(BenchmarkArgs& args) : args(args), size(args.problem_size) {}
 
 	void setup() {
 		A.resize(size * size);
@@ -109,7 +109,7 @@ class Polybench_Syrk {
 	static std::string getBenchmarkName() { return "Polybench_Syrk"; }
 
   private:
-	BenchmarkArgs args;
+	 BenchmarkArgs& args;
 
 	const size_t size;
 	std::vector<DATA_TYPE> A;

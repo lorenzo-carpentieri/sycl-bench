@@ -28,7 +28,7 @@ protected:
     const unsigned int rounds = 10;
     const unsigned int seed = 123;
     
-    BenchmarkArgs args;
+     BenchmarkArgs& args;
 
     PrefetchedBuffer<s::uchar4, 1> buf_input;    
     PrefetchedBuffer<s::uchar4, 1> buf_output; 
@@ -282,7 +282,7 @@ protected:
   }
 
 public:
-  AesEncrypt(const BenchmarkArgs &_args) : args(_args) {}
+  AesEncrypt(BenchmarkArgs& _args) : args(_args) {}
 
   void setup() {
    

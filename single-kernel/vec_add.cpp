@@ -16,14 +16,14 @@ protected:
   std::vector<T> input1;
   std::vector<T> input2;
   std::vector<T> output;
-  BenchmarkArgs args;
+   BenchmarkArgs& args;
 
   PrefetchedBuffer<T, 1> input1_buf;
   PrefetchedBuffer<T, 1> input2_buf;
   PrefetchedBuffer<T, 1> output_buf;
 
 public:
-  VecAddBench(const BenchmarkArgs &_args) : args(_args) {}
+  VecAddBench(BenchmarkArgs& _args) : args(_args) {}
   
   void setup() {
     // host memory intilization

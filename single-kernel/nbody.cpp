@@ -19,7 +19,7 @@ protected:
   std::vector<particle_type> particles;
   std::vector<vector_type> velocities;
 
-  BenchmarkArgs args;
+   BenchmarkArgs& args;
 
 
   const float_type gravitational_softening;
@@ -32,7 +32,7 @@ protected:
   PrefetchedBuffer<vector_type> velocities_buf;
 
 public:
-  NBody(const BenchmarkArgs& _args) : args(_args), gravitational_softening{1.e-5f}, dt{1.e-2f} {
+  NBody(BenchmarkArgs& _args) : args(_args), gravitational_softening{1.e-5f}, dt{1.e-2f} {
     assert(args.problem_size % args.local_size == 0);
   }
 
@@ -281,7 +281,7 @@ public:
   using typename NBody<float_type>::particle_type;
   using typename NBody<float_type>::vector_type;
 
-  NBodyNDRange(const BenchmarkArgs& _args) : NBody<float_type>{_args} {}
+  NBodyNDRange(BenchmarkArgs& _args) : NBody<float_type>{_args} {}
 
 
   void run() { this->submitNDRange(this->particles_buf.get(), this->velocities_buf.get()); }
@@ -301,7 +301,7 @@ public:
   using typename NBody<float_type>::particle_type;
   using typename NBody<float_type>::vector_type;
 
-  NBodyHierarchical(const BenchmarkArgs& _args) : NBody<float_type>{_args} {}
+  NBodyHierarchical(BenchmarkArgs& _args) : NBody<float_type>{_args} {}
 
 
   void run() { this->submitHierarchical(this->particles_buf.get(), this->velocities_buf.get()); }

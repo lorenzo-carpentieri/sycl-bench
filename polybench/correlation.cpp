@@ -90,7 +90,7 @@ void correlation(DATA_TYPE* data, DATA_TYPE* mean, DATA_TYPE* stddev, DATA_TYPE*
 
 class Polybench_Correlation {
 public:
-  Polybench_Correlation(const BenchmarkArgs& args) : args(args), size(args.problem_size) {}
+  Polybench_Correlation(BenchmarkArgs& args) : args(args), size(args.problem_size) {}
 
   void setup() {
     data.resize((size + 1) * (size + 1));
@@ -220,7 +220,7 @@ public:
   static std::string getBenchmarkName() { return "Polybench_Correlation"; }
 
 private:
-  BenchmarkArgs args;
+   BenchmarkArgs& args;
 
   const size_t size;
   std::vector<DATA_TYPE> data;

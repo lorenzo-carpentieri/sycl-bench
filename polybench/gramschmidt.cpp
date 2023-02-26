@@ -55,7 +55,7 @@ void gramschmidt(DATA_TYPE* A, DATA_TYPE* R, DATA_TYPE* Q, size_t size) {
 
 class Polybench_Gramschmidt {
 public:
-  Polybench_Gramschmidt(const BenchmarkArgs& args) : args(args), size(args.problem_size) {}
+  Polybench_Gramschmidt(BenchmarkArgs& args) : args(args), size(args.problem_size) {}
 
   void setup() {
     A.resize(size * size);
@@ -149,7 +149,7 @@ public:
   static std::string getBenchmarkName() { return "Polybench_Gramschmidt"; }
 
 private:
-  BenchmarkArgs args;
+   BenchmarkArgs& args;
 
   const size_t size;
   std::vector<DATA_TYPE> A;

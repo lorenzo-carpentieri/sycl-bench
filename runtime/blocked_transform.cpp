@@ -44,11 +44,11 @@ template <int Num_iterations>
 class BlockedTransform {
 private:
   std::vector<complex> data;
-  BenchmarkArgs args;
+   BenchmarkArgs& args;
   std::size_t block_size;
 
 public:
-  BlockedTransform(const BenchmarkArgs& _args, std::size_t _block_size) : args(_args), block_size{_block_size} {
+  BlockedTransform(BenchmarkArgs& _args, std::size_t _block_size) : args(_args), block_size{_block_size} {
     assert(block_size > 0);
   }
 

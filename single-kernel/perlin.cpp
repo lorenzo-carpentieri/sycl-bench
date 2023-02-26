@@ -17,7 +17,7 @@ class PerlinNoise
 protected:
     size_t size; // user-defined size (input and output will be size x size)
     size_t local_size;
-    BenchmarkArgs args;
+     BenchmarkArgs& args;
     int width;
     float time;
 
@@ -240,7 +240,7 @@ protected:
 
 
 public:
-  PerlinNoise(const BenchmarkArgs &_args) : args(_args) {}
+  PerlinNoise(BenchmarkArgs& _args) : args(_args) {}
   
   void setup() {
     size = args.problem_size; // input size defined by the user

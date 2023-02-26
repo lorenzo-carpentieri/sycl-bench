@@ -27,7 +27,7 @@ protected:
     size_t w, h; // size of the input picture
     size_t size; // user-defined size (input and output will be size x size)
     size_t local_size;
-    BenchmarkArgs args;
+     BenchmarkArgs& args;
 
 	
     std::vector<uint> ma;
@@ -45,7 +45,7 @@ protected:
 
 
 public:
-  MerseTwister(const BenchmarkArgs &_args) : args(_args) {}
+  MerseTwister(BenchmarkArgs& _args) : args(_args) {}
   
   void setup() {
     size = args.problem_size; // input size defined by the user

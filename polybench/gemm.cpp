@@ -57,7 +57,7 @@ void gemm(DATA_TYPE* A, DATA_TYPE* B, DATA_TYPE* C, size_t size) {
 
 class Polybench_Gemm {
   public:
-	Polybench_Gemm(const BenchmarkArgs& args) : args(args), size(args.problem_size) {}
+	Polybench_Gemm(BenchmarkArgs& args) : args(args), size(args.problem_size) {}
 
 	void setup() {
 		A.resize(size * size);
@@ -117,7 +117,7 @@ class Polybench_Gemm {
 	static std::string getBenchmarkName() { return "Polybench_Gemm"; }
 
 private:
-	BenchmarkArgs args;
+	 BenchmarkArgs& args;
 
 	const size_t size;
 	std::vector<DATA_TYPE> A;

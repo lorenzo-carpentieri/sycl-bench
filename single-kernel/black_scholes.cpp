@@ -41,7 +41,7 @@ protected:
     size_t w, h; // size of the input picture
     size_t size; // user-defined size (input and output will be size x size)
     size_t local_size;
-    BenchmarkArgs args;
+     BenchmarkArgs& args;
 
 
     PrefetchedBuffer<FIXED, 1> cpflag_buf;  
@@ -89,7 +89,7 @@ protected:
     }
 
 public:
-  BlackScholes(const BenchmarkArgs &_args) : args(_args) {}
+  BlackScholes(BenchmarkArgs& _args) : args(_args) {}
 
   void setup() {
     size = args.problem_size; // input size defined by the user

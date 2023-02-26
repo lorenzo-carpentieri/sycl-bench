@@ -64,7 +64,7 @@ void runFdtd(DATA_TYPE* fict, DATA_TYPE* ex, DATA_TYPE* ey, DATA_TYPE* hz, size_
 
 class Polybench_Fdtd2d {
   public:
-	Polybench_Fdtd2d(const BenchmarkArgs& args) : args(args), size(args.problem_size) {}
+	Polybench_Fdtd2d(BenchmarkArgs& args) : args(args), size(args.problem_size) {}
 
 	void setup() {
 		fict.resize(TMAX);
@@ -182,7 +182,7 @@ class Polybench_Fdtd2d {
 	static std::string getBenchmarkName() { return "Polybench_Fdtd2d"; }
 
   private:
-	BenchmarkArgs args;
+	 BenchmarkArgs& args;
 
 	const size_t size;
 	std::vector<DATA_TYPE> fict;

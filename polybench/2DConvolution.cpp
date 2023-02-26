@@ -43,7 +43,7 @@ void conv2D(DATA_TYPE* A, DATA_TYPE* B, size_t size) {
 
 class Polybench_2DConvolution {
 public:
-  Polybench_2DConvolution(const BenchmarkArgs& args) : args(args), size(args.problem_size) {}
+  Polybench_2DConvolution(BenchmarkArgs& args) : args(args), size(args.problem_size) {}
 
   void setup() {
     A.resize(size * size);
@@ -103,7 +103,7 @@ public:
   static std::string getBenchmarkName() { return "Polybench_2DConvolution"; }
 
 private:
-  BenchmarkArgs args;
+   BenchmarkArgs& args;
 
   const size_t size;
   std::vector<DATA_TYPE> A;

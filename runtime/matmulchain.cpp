@@ -38,7 +38,7 @@ protected:
 	std::vector<T> mat_c;
 	std::vector<T> mat_d;
 	std::vector<T> mat_res;
-	BenchmarkArgs args;
+	 BenchmarkArgs& args;
 	int mat_size;
 
 	PrefetchedBuffer<T, 2> mat_a_buf;
@@ -50,7 +50,7 @@ protected:
   PrefetchedBuffer<T, 2> mat_q_buf;
 
 public:
-	MatmulChain(const BenchmarkArgs &_args) : args(_args) {
+	MatmulChain(BenchmarkArgs& _args) : args(_args) {
 		mat_size = args.problem_size;
 	}
 

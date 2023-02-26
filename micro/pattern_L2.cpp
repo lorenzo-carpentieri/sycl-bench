@@ -12,12 +12,12 @@ class MicroBenchL2
 {
 protected:
     std::vector<DATA_TYPE> input;
-    BenchmarkArgs args;
+     BenchmarkArgs& args;
 
     PrefetchedBuffer<DATA_TYPE, 1> input_buf;
     PrefetchedBuffer<DATA_TYPE, 1> output_buf;
 public:
-  MicroBenchL2(const BenchmarkArgs &_args) : args(_args) {}
+  MicroBenchL2(BenchmarkArgs& _args) : args(_args) {}
 
   void setup() {
     // buffers initialized to a default value 

@@ -16,10 +16,10 @@ class DagTaskThroughputKernelHierarchicalPF;
 class DagTaskThroughput {
   const int initial_value;
   PrefetchedBuffer<int, 1> dummy_counter;
-  BenchmarkArgs args;
+   BenchmarkArgs& args;
 
 public:
-  DagTaskThroughput(const BenchmarkArgs& _args) : initial_value{0}, args(_args) {}
+  DagTaskThroughput(BenchmarkArgs& _args) : initial_value{0}, args(_args) {}
 
   void setup() { dummy_counter.initialize(args.device_queue, &initial_value, sycl::range<1>{1}); }
 
@@ -91,7 +91,7 @@ public:
 
 class DagTaskThroughputSingleTask : public DagTaskThroughput {
 public:
-  DagTaskThroughputSingleTask(const BenchmarkArgs& args) : DagTaskThroughput{args} {}
+  DagTaskThroughputSingleTask(BenchmarkArgs& args) : DagTaskThroughput{args} {}
 
   void run() { submit_single_task(); }
 
@@ -101,7 +101,7 @@ public:
 
 class DagTaskThroughputBasicPF : public DagTaskThroughput {
 public:
-  DagTaskThroughputBasicPF(const BenchmarkArgs& args) : DagTaskThroughput{args} {}
+  DagTaskThroughputBasicPF(BenchmarkArgs& args) : DagTaskThroughput{args} {}
 
   void run() { submit_basic_parallel_for(); }
 
@@ -111,7 +111,7 @@ public:
 
 class DagTaskThroughputNDRangePF : public DagTaskThroughput {
 public:
-  DagTaskThroughputNDRangePF(const BenchmarkArgs& args) : DagTaskThroughput{args} {}
+  DagTaskThroughputNDRangePF(BenchmarkArgs& args) : DagTaskThroughput{args} {}
 
   void run() { submit_ndrange_parallel_for(); }
 
@@ -121,7 +121,7 @@ public:
 
 class DagTaskThroughputHierarchicalPF : public DagTaskThroughput {
 public:
-  DagTaskThroughputHierarchicalPF(const BenchmarkArgs& args) : DagTaskThroughput{args} {}
+  DagTaskThroughputHierarchicalPF(BenchmarkArgs& args) : DagTaskThroughput{args} {}
 
   void run() { submit_hierarchical_parallel_for(); }
 

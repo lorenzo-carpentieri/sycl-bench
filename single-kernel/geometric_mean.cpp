@@ -17,7 +17,7 @@ protected:
   std::vector<s::float16> input;
   std::vector<float> output;
 
-  BenchmarkArgs args;
+   BenchmarkArgs& args;
 
 
   PrefetchedBuffer<s::float16, 1> buf_input;
@@ -39,7 +39,7 @@ protected:
   }
 
 public:
-  GeometricMean(const BenchmarkArgs& _args) : args(_args) {}
+  GeometricMean(BenchmarkArgs& _args) : args(_args) {}
 
   void setup() {
     size = args.problem_size;     // input size defined by the user

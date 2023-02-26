@@ -70,7 +70,7 @@ void mm2_cpu(DATA_TYPE* A, DATA_TYPE* B, DATA_TYPE* C, DATA_TYPE* D, DATA_TYPE* 
 
 class Polybench_2mm {
   public:
-	Polybench_2mm(const BenchmarkArgs& args) : args(args), size(args.problem_size) {}
+	Polybench_2mm(BenchmarkArgs& args) : args(args), size(args.problem_size) {}
 
 	void setup() {
 		A.resize(size * size);
@@ -146,7 +146,7 @@ class Polybench_2mm {
 	static std::string getBenchmarkName() { return "Polybench_2mm"; }
 
   private:
-	BenchmarkArgs args;
+	 BenchmarkArgs& args;
 
 	const size_t size;
 	std::vector<DATA_TYPE> A;

@@ -12,13 +12,13 @@ template <typename DATA_TYPE, int COMP_ITERS>
 class MicroBenchLocalMemory {
 protected:
   std::vector<DATA_TYPE> input;
-  BenchmarkArgs args;
+   BenchmarkArgs& args;
 
   PrefetchedBuffer<DATA_TYPE, 1> input_buf;
   PrefetchedBuffer<DATA_TYPE, 1> output_buf;
 
 public:
-  MicroBenchLocalMemory(const BenchmarkArgs& _args) : args(_args) {
+  MicroBenchLocalMemory(BenchmarkArgs& _args) : args(_args) {
     assert(args.problem_size % args.local_size == 0 && "Invalid problem_size/local_size combination.");
   }
 

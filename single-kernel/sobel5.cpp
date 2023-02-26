@@ -23,12 +23,12 @@ protected:
 
     size_t w, h; // size of the input picture
     size_t size; // user-defined size (input and output will be size x size)
-    BenchmarkArgs args;
+     BenchmarkArgs& args;
 
     PrefetchedBuffer<sycl::float4, 2> input_buf;
     PrefetchedBuffer<sycl::float4, 2> output_buf;
 public:
-  Sobel5Bench(const BenchmarkArgs &_args) : args(_args) {}
+  Sobel5Bench(BenchmarkArgs& _args) : args(_args) {}
 
   void setup() {
     size = args.problem_size; // input size defined by the user

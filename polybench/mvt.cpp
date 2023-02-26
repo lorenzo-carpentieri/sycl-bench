@@ -46,7 +46,7 @@ void runMvt(DATA_TYPE* a, DATA_TYPE* x1, DATA_TYPE* x2, DATA_TYPE* y1, DATA_TYPE
 
 class Polybench_Mvt {
   public:
-	Polybench_Mvt(const BenchmarkArgs& args) : args(args), size(args.problem_size) {}
+	Polybench_Mvt(BenchmarkArgs& args) : args(args), size(args.problem_size) {}
 
 	void setup() {
 		a.resize(size * size);
@@ -120,7 +120,7 @@ class Polybench_Mvt {
 	static std::string getBenchmarkName() { return "Polybench_Mvt"; }
 
   private:
-	BenchmarkArgs args;
+	 BenchmarkArgs& args;
 
 	const size_t size;
 	std::vector<DATA_TYPE> a;

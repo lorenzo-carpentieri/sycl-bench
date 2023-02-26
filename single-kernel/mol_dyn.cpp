@@ -15,14 +15,14 @@ protected:
   int lj1;
   float lj2;
   int inum;
-  BenchmarkArgs args;
+   BenchmarkArgs& args;
 
   PrefetchedBuffer<s::float4, 1> input_buf;
   PrefetchedBuffer<int, 1> neighbour_buf;
   PrefetchedBuffer<s::float4, 1> output_buf;
 
 public:
-  MolecularDynamicsBench(const BenchmarkArgs& _args) : args(_args) {}
+  MolecularDynamicsBench(BenchmarkArgs& _args) : args(_args) {}
 
   void setup() {
     // host memory allocation and initialization

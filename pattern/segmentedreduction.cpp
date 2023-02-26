@@ -19,7 +19,7 @@ protected:
   PrefetchedBuffer<T, 1> _buff;
 
 public:
-  SegmentedReduction(const BenchmarkArgs& args) : _args{args} { assert(_args.problem_size % _args.local_size == 0); }
+  SegmentedReduction(BenchmarkArgs& args) : _args{args} { assert(_args.problem_size % _args.local_size == 0); }
 
   void generate_input(std::vector<T>& out) {
     out.resize(_args.problem_size);
@@ -126,7 +126,7 @@ public:
 template <class T>
 class SegmentedReductionNDRange : public SegmentedReduction<T> {
 public:
-  SegmentedReductionNDRange(const BenchmarkArgs& args) : SegmentedReduction<T>{args} {}
+  SegmentedReductionNDRange(BenchmarkArgs& args) : SegmentedReduction<T>{args} {}
 
   void run(std::vector<sycl::event>& events) {
     this->submit_ndrange(events);
@@ -145,7 +145,7 @@ public:
 template <class T>
 class SegmentedReductionHierarchical : public SegmentedReduction<T> {
 public:
-  SegmentedReductionHierarchical(const BenchmarkArgs& args) : SegmentedReduction<T>{args} {}
+  SegmentedReductionHierarchical(BenchmarkArgs& args) : SegmentedReduction<T>{args} {}
 
   void run(std::vector<sycl::event>& events) {
     this->submit_hierarchical(events);

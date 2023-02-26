@@ -86,7 +86,7 @@ void mm3_cpu(DATA_TYPE* A, DATA_TYPE* B, DATA_TYPE* C, DATA_TYPE* D, DATA_TYPE* 
 
 class Polybench_3mm {
   public:
-	Polybench_3mm(const BenchmarkArgs& args) : args(args), size(args.problem_size) {}
+	Polybench_3mm(BenchmarkArgs& args) : args(args), size(args.problem_size) {}
 
 	void setup() {
 		A.resize(size * size);
@@ -183,7 +183,7 @@ class Polybench_3mm {
 	static std::string getBenchmarkName() { return "Polybench_3mm"; }
 
   private:
-	BenchmarkArgs args;
+	 BenchmarkArgs& args;
 
 	const size_t size;
 	std::vector<DATA_TYPE> A;

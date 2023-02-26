@@ -62,7 +62,7 @@ void covariance(DATA_TYPE* data, DATA_TYPE* symmat, DATA_TYPE* mean, size_t size
 
 class Polybench_Covariance {
 public:
-  Polybench_Covariance(const BenchmarkArgs& args) : args(args), size(args.problem_size) {}
+  Polybench_Covariance(BenchmarkArgs& args) : args(args), size(args.problem_size) {}
 
   void setup() {
     data.resize((size + 1) * (size + 1));
@@ -157,7 +157,7 @@ public:
   static std::string getBenchmarkName() { return "Polybench_Covariance"; }
 
 private:
-  BenchmarkArgs args;
+   BenchmarkArgs& args;
 
   const size_t size;
   std::vector<DATA_TYPE> data;

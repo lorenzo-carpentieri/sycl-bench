@@ -21,14 +21,14 @@ protected:
   // Only needed for verification as reduction is done inplace which modifies the input
   std::vector<T> input1ver;
   std::vector<T> input2ver;
-  BenchmarkArgs args;
+   BenchmarkArgs& args;
 
   PrefetchedBuffer<T, 1> input1_buf;
   PrefetchedBuffer<T, 1> input2_buf;
   PrefetchedBuffer<T, 1> output_buf;
 
 public:
-  LinearRegressionCoeffBench(const BenchmarkArgs& _args) : args(_args) {}
+  LinearRegressionCoeffBench(BenchmarkArgs& _args) : args(_args) {}
 
   void setup() {
     // host memory allocation and initialization

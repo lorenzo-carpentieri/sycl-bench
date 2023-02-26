@@ -20,14 +20,14 @@ protected:
 	  int nclusters;
     int feature_size;
     int cluster_size;
-    BenchmarkArgs args;
+     BenchmarkArgs& args;
 
 
     PrefetchedBuffer<T, 1> features_buf;
     PrefetchedBuffer<T, 1> clusters_buf;
     PrefetchedBuffer<int, 1> membership_buf;
 public:
-  KmeansBench(const BenchmarkArgs &_args) : args(_args) {}
+  KmeansBench(BenchmarkArgs& _args) : args(_args) {}
   
   void setup() {      
     // host memory allocation and initialization

@@ -15,7 +15,7 @@ protected:
     std::vector<T> beta;
     std::vector<T> output;
     std::vector<T> expected_output;
-    BenchmarkArgs args;
+     BenchmarkArgs& args;
 
     PrefetchedBuffer<T, 1> input1_buf;
     PrefetchedBuffer<T, 1> input2_buf;
@@ -24,7 +24,7 @@ protected:
     PrefetchedBuffer<T, 1> output_buf;
 
 public:
-  LinearRegressionBench(const BenchmarkArgs &_args) : args(_args) {}
+  LinearRegressionBench(BenchmarkArgs& _args) : args(_args) {}
   
   void setup() {      
     // host memory allocation and initialization

@@ -14,7 +14,7 @@ class Knn
 protected:
     size_t size; 
     size_t local_size;
-    BenchmarkArgs args;
+     BenchmarkArgs& args;
     int nRef;
 
     std::vector<float> ref;
@@ -31,7 +31,7 @@ protected:
     PrefetchedBuffer<int, 1> buf_neighbors;    
 
 public:
-  Knn(const BenchmarkArgs &_args) : args(_args) {}
+  Knn(BenchmarkArgs& _args) : args(_args) {}
   
   void setup() {
     size = args.problem_size; // input size defined by the user

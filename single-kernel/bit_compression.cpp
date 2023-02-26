@@ -17,14 +17,14 @@ protected:
     size_t local_size;
 	  std::vector<s::uint4> input;
 
-    BenchmarkArgs args;
+     BenchmarkArgs& args;
    
     PrefetchedBuffer<uint, 1> buf_bits;  
     PrefetchedBuffer<s::uint4, 1> buf_input;    
     PrefetchedBuffer<uint, 1> buf_output;       
 
 public:
-  BitCompression(const BenchmarkArgs &_args) : args(_args) {}
+  BitCompression(BenchmarkArgs& _args) : args(_args) {}
 
   void setup() {
     size = args.problem_size; // input size defined by the user

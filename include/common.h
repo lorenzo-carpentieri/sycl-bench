@@ -18,9 +18,11 @@
 
 #include "benchmark_hook.h"
 #include "benchmark_traits.h"
+#include "energy_metrics.h"
 #include "prefetched_buffer.h"
-#include "time_metrics.h"
 #include "queue_macro.h"
+#include "time_metrics.h"
+
 
 #ifdef NV_ENERGY_MEAS
 #include "nv_energy_meas.h"
@@ -45,6 +47,8 @@ public:
     args.result_consumer->consumeResult("sycl-implementation", this->getSyclImplementation());
 
     TimeMetricsProcessor<Benchmark> time_metrics(args);
+    EnergyMetricsProcessor<Benchmark> energy_metrics(args);
+
 
     for(auto h : hooks) h->atInit();
 
@@ -81,7 +85,7 @@ public:
         time_metrics.addTimingResult("run-time", std::chrono::duration_cast<std::chrono::nanoseconds>(after - before));
 
         if(detail::BenchmarkTraits<Benchmark>::supportsQueueProfiling) {
-#if (SYCL_BENCH_ENABLE_QUEUE_PROFILING==1)
+#if(SYCL_BENCH_ENABLE_QUEUE_PROFILING == 1)
           // TODO: We might also want to consider the "command_submit" time.
           std::chrono::nanoseconds total_time{0};
           for(auto& e : run_events) {
@@ -91,23 +95,27 @@ public:
           }
           time_metrics.addTimingResult("kernel-time", total_time);
 #else
-        time_metrics.markAsUnavailable("kernel-time");
+          time_metrics.markAsUnavailable("kernel-time");
 #endif
 
         } else {
           time_metrics.markAsUnavailable("kernel-time");
         }
-if(detail::BenchmarkTraits<Benchmark>::supportsQueueProfiling) {
+        if(detail::BenchmarkTraits<Benchmark>::supportsQueueProfiling) {
 #ifdef __ENABLED_SYNERGY
-  int i = 0;
-  for(sycl::event& e : run_events) {
-    double energy = args.device_queue.kernel_energy_consumption(e);
-    args.result_consumer->consumeResult("Energy kernel " + std::to_string(i), std::to_string(energy), "[J]");
-    // std::cout<< "Energy kernel " << i << ": " << energy << std::endl; 
-    i++;
-  }
+          int i = 0;
+          double total_energy = 0;
+          for(sycl::event& e : run_events) {
+            double energy = args.device_queue.kernel_energy_consumption(e);
+            total_energy += energy;
+            i++;
+          }
+
+          energy_metrics.addEnergyResult("kernel-energy", total_energy);
+
+
 #endif
-}
+        }
 
         if constexpr(detail::BenchmarkTraits<Benchmark>::hasVerify) {
           if(args.verification.range.size() > 0) {
@@ -125,6 +133,8 @@ if(detail::BenchmarkTraits<Benchmark>::supportsQueueProfiling) {
     }
 
     time_metrics.emitResults(*args.result_consumer);
+    energy_metrics.emitResults(*args.result_consumer);
+
 
     for(auto h : hooks) {
       // Extract results from the hooks
@@ -167,7 +177,6 @@ private:
 
 class BenchmarkApp {
   BenchmarkArgs args;
-  selected_queue device_queue;
   std::unordered_set<std::string> benchmark_names;
 
 public:

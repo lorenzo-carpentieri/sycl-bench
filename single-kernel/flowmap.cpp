@@ -23,7 +23,7 @@ protected:
   std::vector<float> timesteps;
   std::vector<s::float2> flowMap;
 
-  BenchmarkArgs args;
+   BenchmarkArgs& args;
 
 
   PrefetchedBuffer<s::float2, 1> buf_data;
@@ -57,7 +57,7 @@ protected:
 
 
 public:
-  FlowMap(const BenchmarkArgs& _args) : args(_args) {}
+  FlowMap(BenchmarkArgs& _args) : args(_args) {}
 
   void setup() {
     size = args.problem_size;     // input size defined by the user

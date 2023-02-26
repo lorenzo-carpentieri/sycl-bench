@@ -56,7 +56,7 @@ void gesummv(DATA_TYPE* A, DATA_TYPE* B, DATA_TYPE* x, DATA_TYPE* y, DATA_TYPE* 
 
 class Polybench_Gesummv {
 public:
-	Polybench_Gesummv(const BenchmarkArgs& args) : args(args), size(args.problem_size) {}
+	Polybench_Gesummv(BenchmarkArgs& args) : args(args), size(args.problem_size) {}
 
 	void setup() {
 		A.resize(size * size);
@@ -119,7 +119,7 @@ public:
 	static std::string getBenchmarkName() { return "Polybench_Gesummv"; }
 
 private:
-	BenchmarkArgs args;
+	 BenchmarkArgs& args;
 
 	const size_t size;
 	std::vector<DATA_TYPE> A;

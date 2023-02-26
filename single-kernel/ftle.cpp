@@ -23,7 +23,7 @@ protected:
   std::vector<s::float2> output;
 
 
-  BenchmarkArgs args;
+   BenchmarkArgs& args;
 
 
   PrefetchedBuffer<s::float2, 1> buf_output;
@@ -105,7 +105,7 @@ protected:
 
 
 public:
-  Ftle(const BenchmarkArgs& _args) : args(_args) {}
+  Ftle(BenchmarkArgs& _args) : args(_args) {}
 
   void setup() {
     size = args.problem_size;     // input size defined by the user

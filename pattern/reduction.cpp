@@ -25,7 +25,7 @@ protected:
   T _result;
 
 public:
-  Reduction(const BenchmarkArgs& args) : _args{args} { assert(_args.problem_size % _args.local_size == 0); }
+  Reduction(BenchmarkArgs& args) : _args{args} { assert(_args.problem_size % _args.local_size == 0); }
 
   void generate_input(std::vector<T>& out) {
     out.resize(_args.problem_size);
@@ -171,7 +171,7 @@ private:
 template <class T>
 class ReductionNDRange : public Reduction<T> {
 public:
-  ReductionNDRange(const BenchmarkArgs& args) : Reduction<T>{args} {}
+  ReductionNDRange(BenchmarkArgs& args) : Reduction<T>{args} {}
 
   void run(std::vector<sycl::event>& events) { this->submit_ndrange(events); }
 
@@ -186,7 +186,7 @@ public:
 template <class T>
 class ReductionHierarchical : public Reduction<T> {
 public:
-  ReductionHierarchical(const BenchmarkArgs& args) : Reduction<T>{args} {}
+  ReductionHierarchical(BenchmarkArgs& args) : Reduction<T>{args} {}
 
   void run(std::vector<sycl::event>& events) {
     this->submit_hierarchical(events);

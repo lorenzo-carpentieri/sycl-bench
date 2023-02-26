@@ -14,7 +14,7 @@ class Spmv
 protected:
     size_t size; // user-defined size (input and output will be size x size)
     size_t local_size;
-    BenchmarkArgs args;
+     BenchmarkArgs& args;
 
 	
     std::vector<int> row_b;
@@ -35,7 +35,7 @@ protected:
 
 
 public:
-  Spmv(const BenchmarkArgs &_args) : args(_args) {}
+  Spmv(BenchmarkArgs& _args) : args(_args) {}
   
   void setup() {
     size = args.problem_size; // input size defined by the user

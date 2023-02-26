@@ -53,7 +53,7 @@ void syr2k(DATA_TYPE* A, DATA_TYPE* B, DATA_TYPE* C, size_t size) {
 
 class Polybench_Syr2k {
   public:
-	Polybench_Syr2k(const BenchmarkArgs& args) : args(args), size(args.problem_size) {}
+	Polybench_Syr2k(BenchmarkArgs& args) : args(args), size(args.problem_size) {}
 
 	void setup() {
 		A.resize(size * size);
@@ -113,7 +113,7 @@ class Polybench_Syr2k {
 	static std::string getBenchmarkName() { return "Polybench_Syr2k"; }
 
   private:
-	BenchmarkArgs args;
+	 BenchmarkArgs& args;
 
 	const size_t size;
 	std::vector<DATA_TYPE> A;

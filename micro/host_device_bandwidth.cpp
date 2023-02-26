@@ -66,7 +66,7 @@ class H2DVerificationKernel;
 template <int Dims, CopyDirection Direction, bool Strided>
 class MicroBenchHostDeviceBandwidth {
 protected:
-  BenchmarkArgs args;
+   BenchmarkArgs& args;
   // The buffer size to be copied. This is independent of stride.
   const s::range<Dims> copy_size;
   // The host buffer used as source or target for (some) copy operations.
@@ -80,7 +80,7 @@ protected:
   static constexpr DataT TEST_VALUE = 33;
 
 public:
-  MicroBenchHostDeviceBandwidth(const BenchmarkArgs& args)
+  MicroBenchHostDeviceBandwidth(BenchmarkArgs& args)
       : args(args), copy_size(getBufferSize<Dims, false>(args.problem_size)),
         strided_buffer_size(getBufferSize<Dims, Strided>(args.problem_size)) {}
 
