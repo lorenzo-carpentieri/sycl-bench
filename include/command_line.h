@@ -133,6 +133,10 @@ struct VerificationSetting {
 
 struct BenchmarkArgs {
   size_t problem_size;
+   #ifdef __ENABLED_SYNERGY
+    synergy::frequency core_freq;
+    synergy::frequency memory_freq;
+  #endif
   size_t local_size;
   size_t num_runs;
   selected_queue device_queue;
@@ -184,9 +188,13 @@ public:
     auto verification_range = cli_parser.getOrDefault<sycl::range<3>>("--verification-range", sycl::range<3>{1, 1, 1});
 
     auto result_consumer = getResultConsumer(cli_parser.getOrDefault<std::string>("--output", "stdio"));
-
-    return BenchmarkArgs{size, local_size, num_runs, q,
-        VerificationSetting{verification_enabled, verification_begin, verification_range}, cli_parser, result_consumer};
+    #ifdef __ENABLED_SYNERGY
+      return BenchmarkArgs{size, core_freq, memory_freq, local_size, num_runs, q,
+          VerificationSetting{verification_enabled, verification_begin, verification_range}, cli_parser, result_consumer};
+    #else
+      return BenchmarkArgs{size, local_size, num_runs, q,
+          VerificationSetting{verification_enabled, verification_begin, verification_range}, cli_parser, result_consumer};
+    #endif
   }
 
 private:

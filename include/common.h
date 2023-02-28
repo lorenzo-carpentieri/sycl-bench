@@ -42,6 +42,10 @@ public:
 
     args.result_consumer->consumeResult("problem-size", std::to_string(args.problem_size));
     args.result_consumer->consumeResult("local-size", std::to_string(args.local_size));
+    #ifdef __ENABLED_SYNERGY
+      args.result_consumer->consumeResult("core-freq", std::to_string(args.core_freq));
+      args.result_consumer->consumeResult("memory-freq", std::to_string(args.memory_freq));
+    #endif
     args.result_consumer->consumeResult(
         "device-name", args.device_queue.get_device().template get_info<sycl::info::device::name>());
     args.result_consumer->consumeResult("sycl-implementation", this->getSyclImplementation());
