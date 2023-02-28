@@ -52,7 +52,7 @@ public:
           auto out_acc = out_buf.get_access<sycl::access_mode::write>(cgh);
           sycl::range<1> r{size / Coarsening};
 
-          cgh.parallel_for(r, [=](sycl::id<1> id) {
+          cgh.parallel_for(r, [=, _size=size](sycl::id<1> id) {
             size_t base_data_index = id.get(0) * Coarsening;
 
             // clang-format off
@@ -63,8 +63,8 @@ public:
               float f0 = in_float_acc[data_index];
               int i0  = in_int_acc[data_index];
               
-              float f1 = i0;
-              int i1 = f0;
+              float f1 = in_int_acc[(data_index + _size / 2) % _size];
+              int i1 = in_float_acc[(data_index + _size / 2) % _size];
               
               // clang-format off
               #pragma unroll
@@ -72,6 +72,7 @@ public:
                 f1 = f1 * f0;
                 f0 = f0 * f1;
               }
+              out_acc[data_index] *= f0;
               
               // clang-format off
               #pragma unroll
@@ -79,6 +80,7 @@ public:
                 f1 = f1 / f0;
                 f0 = f0 / f1;
               }
+              out_acc[data_index] *= f0;
 
               // clang-format off
               #pragma unroll
@@ -86,6 +88,7 @@ public:
                 f1 = sycl::acos(f0);
                 f0 = f0 * f0 + f1;
               }
+              out_acc[data_index] *= f0;
 
               // clang-format off
               #pragma unroll
@@ -101,6 +104,7 @@ public:
                 i0 = i0 * i1;
               }
               i0 = i0 * i1;
+              out_acc[data_index] *= i0;
               
               // clang-format off
               #pragma unroll
@@ -108,6 +112,7 @@ public:
                 i1 = i1 / i0;
                 i0 = i0 / i1;
               }
+              out_acc[data_index] *= i0;
 
               // clang-format off
               #pragma unroll
@@ -116,7 +121,7 @@ public:
                 i0 = i0 + i1;
               }
               
-              out_acc[data_index] = i0 + f0;
+              out_acc[data_index] *= (i0 + f0);
             }
           });//end parallel for
         }
@@ -153,38 +158,38 @@ int main(int argc, char** argv)
 {
     BenchmarkApp app(argc, argv);
     //float
-    app.run<ArithmeticBench<1, 2, 3, 3, 0, 0, 0, 0>>();  
-    app.run<ArithmeticBench<2, 2, 3, 3, 0, 0, 0, 0>>();  
+    app.run<ArithmeticBench<1, 4, 5, 5, 0, 0, 0, 0>>();  
+    app.run<ArithmeticBench<2, 4, 5, 5, 0, 0, 0, 0>>();  
   
     // int
-    app.run<ArithmeticBench<1, 0, 0, 0, 2, 3, 3, 0>>();  
-    app.run<ArithmeticBench<2, 0, 0, 0, 2, 3, 3, 0>>(); 
+    app.run<ArithmeticBench<1, 0, 0, 0, 4, 5, 5, 0>>();  
+    app.run<ArithmeticBench<2, 0, 0, 0, 4, 5, 5, 0>>(); 
 
     // float + sp
-    app.run<ArithmeticBench<1, 2, 3, 3, 0, 0, 0, 1>>();  
-    app.run<ArithmeticBench<2, 2, 3, 3, 0, 0, 0, 1>>();  
+    app.run<ArithmeticBench<1, 4, 5, 5, 0, 0, 0, 2>>();  
+    app.run<ArithmeticBench<2, 4, 5, 5, 0, 0, 0, 2>>();  
 
     // int + sp
-    app.run<ArithmeticBench<1, 0, 0, 0, 2, 3, 3, 1>>();   
-    app.run<ArithmeticBench<2, 0, 0, 0, 2, 3, 3, 1>>();  
+    app.run<ArithmeticBench<1, 0, 0, 0, 4, 5, 5, 2>>();   
+    app.run<ArithmeticBench<2, 0, 0, 0, 4, 5, 5, 2>>();  
    
     // equal float and int
-    app.run<ArithmeticBench<1, 2, 3, 3, 2, 3, 3, 0>>();   
-    app.run<ArithmeticBench<2, 2, 3, 3, 2, 3, 3, 0>>();  
-    app.run<ArithmeticBench<1, 2, 3, 3, 2, 3, 3, 1>>();   
-    app.run<ArithmeticBench<2, 2, 3, 3, 2, 3, 3, 1>>();  
+    app.run<ArithmeticBench<1, 4, 5, 5, 4, 5, 5, 0>>();   
+    app.run<ArithmeticBench<2, 4, 5, 5, 4, 5, 5, 0>>();  
+    app.run<ArithmeticBench<1, 4, 5, 5, 4, 5, 5, 2>>();   
+    app.run<ArithmeticBench<2, 4, 5, 5, 4, 5, 5, 2>>();  
     
     // more float than int
-    app.run<ArithmeticBench<1, 4, 5, 5, 2, 3, 3, 0>>();   
-    app.run<ArithmeticBench<2, 4, 5, 5, 2, 3, 3, 0>>();  
-    app.run<ArithmeticBench<1, 4, 5, 5, 2, 3, 3, 1>>();   
-    app.run<ArithmeticBench<2, 4, 5, 5, 2, 3, 3, 1>>();  
+    app.run<ArithmeticBench<1, 6, 7, 7, 4, 5, 5, 0>>();   
+    app.run<ArithmeticBench<2, 6, 7, 7, 4, 5, 5, 0>>();  
+    app.run<ArithmeticBench<1, 6, 7, 7, 4, 5, 5, 2>>();   
+    app.run<ArithmeticBench<2, 6, 7, 7, 4, 5, 5, 2>>();  
 
     // more int than float
-    app.run<ArithmeticBench<1, 2, 3, 3, 4, 5, 5, 0>>();   
-    app.run<ArithmeticBench<2, 2, 3, 3, 4, 5, 5, 0>>();  
-    app.run<ArithmeticBench<1, 2, 3, 3, 4, 5, 5, 1>>();   
-    app.run<ArithmeticBench<2, 2, 3, 3, 4, 5, 5, 1>>();  
+    app.run<ArithmeticBench<1, 4, 5, 5, 6, 7, 7, 0>>();   
+    app.run<ArithmeticBench<2, 4, 5, 5, 6, 7, 7, 0>>();  
+    app.run<ArithmeticBench<1, 4, 5, 5, 6, 7, 7, 2>>();   
+    app.run<ArithmeticBench<2, 4, 5, 5, 6, 7, 7, 2>>();  
 
     return 0;
 }

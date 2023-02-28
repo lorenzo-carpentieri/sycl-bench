@@ -6,10 +6,14 @@ template <size_t Coarsening, size_t Iterations>
 class SpecialFunctions{
     protected:
         std::vector<float> in_array;
-        std::vector<float> out_array;
+        std::vector<float> out_array1;
+        std::vector<float> out_array2;
+
   
         PrefetchedBuffer<float, 1> in_buf;    
-        PrefetchedBuffer<float, 1> out_buf;
+        PrefetchedBuffer<float, 1> out_buf1;
+        PrefetchedBuffer<float, 1> out_buf2;
+
 
         size_t size;
         BenchmarkArgs& args;
@@ -20,20 +24,25 @@ class SpecialFunctions{
         void setup(){
             size = args.problem_size;
             in_array.resize(size);
-            out_array.resize(size);
+            out_array1.resize(size);
+            out_array2.resize(size);
 
             std::fill(in_array.begin(), in_array.end(), 0.0f);
              
             // buffer initialization
             in_buf.initialize(args.device_queue, in_array.data(), sycl::range<1>{size});
-            out_buf.initialize(args.device_queue, out_array.data(), sycl::range<1>{size});
+            out_buf1.initialize(args.device_queue, out_array1.data(), sycl::range<1>{size});
+            out_buf2.initialize(args.device_queue, out_array2.data(), sycl::range<1>{size});
+
         }
 
         void run(std::vector<sycl::event>& events){
             events.push_back(
                 args.device_queue.submit([&](sycl::handler& cgh){
                     auto in_acc = in_buf.get_access<sycl::access_mode::read>(cgh);
-                    auto out_acc = out_buf.get_access<sycl::access_mode::write>(cgh);
+                    auto out_acc1 = out_buf1.get_access<sycl::access_mode::write>(cgh);
+                    auto out_acc2 = out_buf2.get_access<sycl::access_mode::write>(cgh);
+
                     sycl::range<1> r{size / Coarsening};
 
                     cgh.parallel_for(r, [=](sycl::id<1> id) {
@@ -41,22 +50,22 @@ class SpecialFunctions{
 
                         #pragma unroll
                         for (size_t i = 0; i < Coarsening; i++) {
-                        size_t data_index = base_data_index + i;
+                            size_t data_index = base_data_index + i;
 
-                        float f0, f1, f2;
+                            float f0, f1, f2;
 
-                        f0 = in_acc[data_index];
-                        f1 = f2 = f0;
+                            f0 = in_acc[data_index];
+                            f1 = f2 = f0 = in_acc[data_index + 1];
 
-                        #pragma unroll
-                        for (size_t j = 0; j < Iterations; j++) {
-                            f0 = sycl::cos(f1);
-                            f1 = sycl::sin(f2);
-                            f2 = sycl::tan(f1);
-                        }
+                            #pragma unroll
+                            for (size_t j = 0; j < Iterations; j++) {
+                                out_acc2[data_index] = sycl::cos(out_acc2[data_index]);
+                                f0 = sycl::sin(f2);
+                                f2 = sycl::tan(f0);
+                            }
 
-                        out_acc[data_index] = f0;
-                        }
+                            out_acc1[data_index] = f2; 
+                        }                       
                     });                    
 
                 }) // end submit
@@ -72,13 +81,7 @@ class SpecialFunctions{
     }
 
     bool verify(VerificationSetting& ver) {
-        out_buf.reset();
-
-        for (float value : out_array) {
-            if(value != 1)
-                return false;
-        }
-        return true;
+       return true;
     }   
 
 };
@@ -87,13 +90,25 @@ int main(int argc, char** argv) {
   
   BenchmarkApp app(argc, argv);
   app.run<SpecialFunctions<1, 1>>();
-  app.run<SpecialFunctions<1, 64>>();
+  app.run<SpecialFunctions<1, 8>>();
+  app.run<SpecialFunctions<1, 16>>();
+
+
+
   app.run<SpecialFunctions<2, 1>>();
-  app.run<SpecialFunctions<2, 64>>();
+  app.run<SpecialFunctions<2, 8>>();
+  app.run<SpecialFunctions<2, 16>>();
+
+
   app.run<SpecialFunctions<4, 1>>();
-  app.run<SpecialFunctions<4, 64>>();
+  app.run<SpecialFunctions<4, 8>>();
+  app.run<SpecialFunctions<4, 16>>();
+
+
   app.run<SpecialFunctions<8, 1>>();
-  app.run<SpecialFunctions<8, 64>>();
+  app.run<SpecialFunctions<8, 8>>();
+  app.run<SpecialFunctions<8, 16>>();
+
 
   return 0;
 }

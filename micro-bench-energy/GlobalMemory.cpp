@@ -7,10 +7,15 @@ template <typename DataT, size_t Coarsening>
 class GlobaMemoryBench {
 protected:
   std::vector<DataT> in_array;
-  std::vector<DataT> out_array;
+  std::vector<DataT> out_array1;
+  std::vector<DataT> out_array2;
+
+  
   
   PrefetchedBuffer<DataT, 1> in_buf;    
-  PrefetchedBuffer<DataT, 1> out_buf;
+  PrefetchedBuffer<DataT, 1> out_buf1;
+  PrefetchedBuffer<DataT, 1> out_buf2;
+
   size_t size;
   BenchmarkArgs& args;
 
@@ -20,13 +25,17 @@ public:
   void setup() {
     size = args.problem_size;
     in_array.resize(size);
-    out_array.resize(size);
+    out_array1.resize(size);
+    out_array2.resize(size);
+
 
     std::fill(in_array.begin(), in_array.end(), 1);
 
     // buffer initialization
     in_buf.initialize(args.device_queue, in_array.data(), sycl::range<1>{size});
-    out_buf.initialize(args.device_queue, out_array.data(), sycl::range<1>{size});
+    out_buf1.initialize(args.device_queue, out_array1.data(), sycl::range<1>{size});
+    out_buf2.initialize(args.device_queue, out_array2.data(), sycl::range<1>{size});
+
 
 
   }
@@ -34,16 +43,27 @@ public:
   void run(std::vector<sycl::event>& events) {
     events.push_back(args.device_queue.submit([&](sycl::handler& cgh) {
       auto in_acc = in_buf.template get_access<sycl::access_mode::read>(cgh);
-      auto out_acc = out_buf.template get_access<sycl::access_mode::write>(cgh);
+      auto out_acc1 = out_buf1.template get_access<sycl::access_mode::write>(cgh);
+      auto out_acc2 = out_buf2.template get_access<sycl::access_mode::write>(cgh);
+
       sycl::range<1> r{size / Coarsening};
 
       cgh.parallel_for(r, [=](sycl::id<1> id) {
         size_t base_data_index = id.get(0) * Coarsening;
 
         #pragma unroll
-        for(size_t i = 0; i < Coarsening; i++) {
+        for (size_t i = 0; i < Coarsening; i++) {
           size_t data_index = base_data_index + i;
-          out_acc[data_index] = in_acc[data_index];
+          out_acc1[data_index] = in_acc[data_index];
+          out_acc2[data_index] = in_acc[data_index];
+        }
+        
+        #pragma unroll
+        for (size_t i = 0; i < Coarsening; i++) {
+          size_t data_index = base_data_index + i;
+          out_acc2[data_index] *= out_acc1[data_index];
+          out_acc2[data_index] /= out_acc1[data_index];
+          out_acc2[data_index] += out_acc1[data_index];
         }
       });// end parallel_for
     }));  // end push back
