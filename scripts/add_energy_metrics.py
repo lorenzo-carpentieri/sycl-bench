@@ -15,7 +15,6 @@ out_dir=sys.argv[2]
 for file in os.listdir(work_dir):  
                 
     # Carica i file CSV in un DataFrame
-    pd.options.display.float_format = '{:.5f}'.format
     df = pd.read_csv(work_dir+"/"+file)
     energies=df['energy [J]'].values
     times=df['kernel-time [s]'].values
