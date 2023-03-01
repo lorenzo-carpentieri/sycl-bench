@@ -1,12 +1,15 @@
 #ifndef BENCHMARK_COMMAND_LINE_HPP
 #define BENCHMARK_COMMAND_LINE_HPP
 
-#if defined(SYCL_BENCH_ENABLE_QUEUE_PROFILING) || defined(__ENABLED_SYNERGY)  
-    #define queueProperties sycl::property::queue::enable_profiling{}
+#if defined(SYCL_BENCH_ENABLE_QUEUE_PROFILING) || defined(__ENABLED_SYNERGY)
+#define queueProperties                                                                                                \
+  sycl::property::queue::enable_profiling {}
 #else
-    #define queueProperties {}
+#define queueProperties                                                                                                \
+  {}
 #endif
 
+#include "queue_macro.h"
 #include "result_consumer.h"
 #include <iostream>
 #include <memory>
@@ -17,7 +20,6 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
-#include "queue_macro.h"
 
 using CommandLineArguments = std::unordered_map<std::string, std::string>;
 using FlagList = std::unordered_set<std::string>;
@@ -133,10 +135,11 @@ struct VerificationSetting {
 
 struct BenchmarkArgs {
   size_t problem_size;
-   #ifdef __ENABLED_SYNERGY
-    synergy::frequency core_freq;
-    synergy::frequency memory_freq;
-  #endif
+#ifdef __ENABLED_SYNERGY
+  synergy::frequency core_freq;
+  synergy::frequency memory_freq;
+  size_t num_iterations;
+#endif
   size_t local_size;
   size_t num_runs;
   selected_queue device_queue;
@@ -165,36 +168,37 @@ public:
     std::size_t size = cli_parser.getOrDefault<std::size_t>("--size", 3072);
     std::size_t local_size = cli_parser.getOrDefault<std::size_t>("--local", 256);
     std::size_t num_runs = cli_parser.getOrDefault<std::size_t>("--num-runs", 5);
-    #ifdef __ENABLED_SYNERGY
-      synergy::frequency core_freq = cli_parser.getOrDefault<synergy::frequency>("--core-freq", 0);
-      synergy::frequency memory_freq = cli_parser.getOrDefault<synergy::frequency>("--memory-freq", 0);
-    #endif
+#ifdef __ENABLED_SYNERGY
+    synergy::frequency core_freq = cli_parser.getOrDefault<synergy::frequency>("--core-freq", 0);
+    synergy::frequency memory_freq = cli_parser.getOrDefault<synergy::frequency>("--memory-freq", 0);
+    std::size_t num_iterations = cli_parser.getOrDefault<std::size_t>("--num_iters", 0);
+#endif
 
 
     std::string device_type = cli_parser.getOrDefault<std::string>("--device", "default");
-    
+
     selected_queue q = getQueue(device_type);
-    #ifdef __ENABLED_SYNERGY
-      q.set_target_frequencies(memory_freq, core_freq);
-    #endif
+#ifdef __ENABLED_SYNERGY
+    q.set_target_frequencies(memory_freq, core_freq);
+#endif
 
     bool verification_enabled = true;
     if(cli_parser.isFlagSet("--no-verification"))
       verification_enabled = false;
-      
+
 
     auto verification_begin = cli_parser.getOrDefault<sycl::id<3>>("--verification-begin", sycl::id<3>{0, 0, 0});
 
     auto verification_range = cli_parser.getOrDefault<sycl::range<3>>("--verification-range", sycl::range<3>{1, 1, 1});
 
     auto result_consumer = getResultConsumer(cli_parser.getOrDefault<std::string>("--output", "stdio"));
-    #ifdef __ENABLED_SYNERGY
-      return BenchmarkArgs{size, core_freq, memory_freq, local_size, num_runs, q,
-          VerificationSetting{verification_enabled, verification_begin, verification_range}, cli_parser, result_consumer};
-    #else
-      return BenchmarkArgs{size, local_size, num_runs, q,
-          VerificationSetting{verification_enabled, verification_begin, verification_range}, cli_parser, result_consumer};
-    #endif
+#ifdef __ENABLED_SYNERGY
+    return BenchmarkArgs{size, core_freq, memory_freq, num_iterations, local_size, num_runs, q,
+        VerificationSetting{verification_enabled, verification_begin, verification_range}, cli_parser, result_consumer};
+#else
+    return BenchmarkArgs{size, local_size, num_runs, q,
+        VerificationSetting{verification_enabled, verification_begin, verification_range}, cli_parser, result_consumer};
+#endif
   }
 
 private:
@@ -208,35 +212,35 @@ private:
       // as the target file name
       return std::shared_ptr<ResultConsumer>{new AppendingCsvResultConsumer{result_consumer_name}};
   }
-    selected_queue getQueue(const std::string& device_type) const {
+  selected_queue getQueue(const std::string& device_type) const {
 #if defined(__LLVM_SYCL_CUDA__)
     if(device_type != "gpu") {
       throw std::invalid_argument{"Only the 'gpu' device is supported on LLVM CUDA"};
     }
-    
-    return selected_queue(CUDASelector,queueProperties);
 
-  
+    return selected_queue(CUDASelector, queueProperties);
+
+
 #endif
-    #ifndef __ENABLED_SYNERGY
-      if(device_type == "cpu") {
-        return sycl::queue{sycl::cpu_selector_v, queueProperties};
-      } else if(device_type == "gpu") {
-        return sycl::queue{sycl::gpu_selector_v, queueProperties};
-      } else if(device_type == "default") {
-        return sycl::queue{queueProperties};
-      } else {
-        throw std::invalid_argument{"unknown device type: " + device_type};
-      }
-    #else
-      if(device_type == "gpu") {
-        return selected_queue{queueProperties};
-      } else if(device_type == "default") {
-        return selected_queue{queueProperties};
-      } else {
-        throw std::invalid_argument{"unknown device type: " + device_type};
-      }
-    #endif  
+#ifndef __ENABLED_SYNERGY
+    if(device_type == "cpu") {
+      return sycl::queue{sycl::cpu_selector_v, queueProperties};
+    } else if(device_type == "gpu") {
+      return sycl::queue{sycl::gpu_selector_v, queueProperties};
+    } else if(device_type == "default") {
+      return sycl::queue{queueProperties};
+    } else {
+      throw std::invalid_argument{"unknown device type: " + device_type};
+    }
+#else
+    if(device_type == "gpu") {
+      return selected_queue{queueProperties};
+    } else if(device_type == "default") {
+      return selected_queue{queueProperties};
+    } else {
+      throw std::invalid_argument{"unknown device type: " + device_type};
+    }
+#endif
   }
 
   CommandLine cli_parser;
