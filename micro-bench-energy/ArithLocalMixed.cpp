@@ -174,7 +174,7 @@ public:
   }
 };
 
-// 131072 10000
+// 131072 20000
 int main(int argc, char** argv) {
   BenchmarkApp app(argc, argv);
 

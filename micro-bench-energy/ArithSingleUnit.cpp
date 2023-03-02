@@ -124,7 +124,7 @@ public:
   bool verify(VerificationSetting& ver) { return true; }
 };
 
-// 1000000 1000000
+// 1000000 500000
 int main(int argc, char** argv) {
   BenchmarkApp app(argc, argv);
 
@@ -141,8 +141,8 @@ int main(int argc, char** argv) {
 
   // std::cout << "div\n";
   app.run<ArithSingleUnit<int, 0, 0, 1, 0>>();
+  app.run<ArithSingleUnit<int, 0, 0, 2, 0>>();
   app.run<ArithSingleUnit<int, 0, 0, 3, 0>>();
-  app.run<ArithSingleUnit<int, 0, 0, 5, 0>>();
 
   // std::cout << "\nfloat\n";
   // std::cout << "add\n";
@@ -157,13 +157,13 @@ int main(int argc, char** argv) {
 
   // std::cout << "div\n";
   app.run<ArithSingleUnit<float, 0, 0, 1, 0>>();
+  app.run<ArithSingleUnit<float, 0, 0, 2, 0>>();
   app.run<ArithSingleUnit<float, 0, 0, 3, 0>>();
-  app.run<ArithSingleUnit<float, 0, 0, 5, 0>>();
 
   // std::cout << "\nspecial\n";
   app.run<ArithSingleUnit<float, 0, 0, 0, 1>>();
+  app.run<ArithSingleUnit<float, 0, 0, 0, 2>>();
   app.run<ArithSingleUnit<float, 0, 0, 0, 3>>();
-  app.run<ArithSingleUnit<float, 0, 0, 0, 5>>();
 
   return 0;
 }
