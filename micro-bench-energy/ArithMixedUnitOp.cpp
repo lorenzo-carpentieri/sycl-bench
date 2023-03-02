@@ -124,25 +124,25 @@ public:
   bool verify(VerificationSetting& ver) { return true; }
 };
 
-// 1000000 1000000
+// 1000000 50000
 int main(int argc, char** argv) {
   BenchmarkApp app(argc, argv);
 
   app.run<ArithMixedUnitOp<int, 1, 1, 1, 0>>();
-  app.run<ArithMixedUnitOp<int, 5, 3, 3, 0>>();
-  app.run<ArithMixedUnitOp<int, 5, 5, 5, 0>>();
+  app.run<ArithMixedUnitOp<int, 2, 2, 2, 0>>();
+  app.run<ArithMixedUnitOp<int, 3, 3, 3, 0>>();
 
   app.run<ArithMixedUnitOp<int, 1, 1, 1, 1>>();
-  app.run<ArithMixedUnitOp<int, 5, 3, 3, 3>>();
-  app.run<ArithMixedUnitOp<int, 5, 5, 5, 5>>();
+  app.run<ArithMixedUnitOp<int, 2, 2, 2, 2>>();
+  app.run<ArithMixedUnitOp<int, 3, 3, 3, 3>>();
 
   app.run<ArithMixedUnitOp<float, 1, 1, 1, 0>>();
-  app.run<ArithMixedUnitOp<float, 5, 3, 3, 0>>();
-  app.run<ArithMixedUnitOp<float, 5, 5, 5, 0>>();
+  app.run<ArithMixedUnitOp<float, 2, 2, 2, 0>>();
+  app.run<ArithMixedUnitOp<float, 3, 3, 3, 0>>();
 
   app.run<ArithMixedUnitOp<float, 1, 1, 1, 1>>();
-  app.run<ArithMixedUnitOp<float, 5, 3, 3, 3>>();
-  app.run<ArithMixedUnitOp<float, 5, 5, 5, 5>>();
+  app.run<ArithMixedUnitOp<float, 2, 2, 2, 2>>();
+  app.run<ArithMixedUnitOp<float, 3, 3, 3, 3>>();
 
   return 0;
 }

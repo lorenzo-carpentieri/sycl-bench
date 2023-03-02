@@ -152,7 +152,7 @@ public:
   bool verify(VerificationSetting& ver) { return true; }
 };
 
-// 1000000 1000000
+// 1000000 25000
 int main(int argc, char** argv) {
   BenchmarkApp app(argc, argv);
 
