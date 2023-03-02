@@ -87,6 +87,8 @@ public:
         consumer.consumeResult(name + "-stddev", std::to_string(stddev), "J");
         consumer.consumeResult(name + "-median", std::to_string(median), "J");
         consumer.consumeResult(name + "-min", std::to_string(resultsEnergy[0]), "J");
+        consumer.consumeResult(name + "-max", std::to_string(resultsEnergy[resultsEnergy.size()-1]), "J");
+
 
         // Emit individual samples as well
         std::stringstream samples;

@@ -13,7 +13,7 @@ out_dir=sys.argv[2]
 for file in os.listdir(work_dir):
     out_file = file.replace(".log","")
     with open(work_dir+"/"+file, "r") as input_file, open(out_dir+"/"+out_file+"_parsed.csv", "w") as output_file:
-        output_file.write("kernel-name,core-freq,memory-freq,kernel-time [s],run-time [s],energy [J]\n")
+        output_file.write("kernel-name,size,num-iters,core-freq,memory-freq,kernel-time [s],run-time [s],mean-energy [J], max-energy\n")
         for line in input_file:
             if "Results for" in line:
                 line = line.replace("*", "")
@@ -30,7 +30,17 @@ for file in os.listdir(work_dir):
                 line = line.replace("memory-freq:", "")
                 line = line.replace(" ", "")
                 line = line.replace("\n", "")
-                output_file.write(", "+ line)    
+                output_file.write(", "+ line)  
+            if "problem-size:" in line:
+                line = line.replace("problem-size:", "")
+                line = line.replace(" ", "")
+                line = line.replace("\n", "")
+                output_file.write(", "+ line)  
+            if "num-iters:" in line:
+                line = line.replace("num-iters:", "")
+                line = line.replace(" ", "")
+                line = line.replace("\n", "")
+                output_file.write(", "+ line)
             if "kernel-time-mean:" in line:
                 line = line.replace("kernel-time-mean:", "")
                 line = line.replace("[s]", "")  
@@ -47,7 +57,14 @@ for file in os.listdir(work_dir):
                 line = line.replace("kernel-energy-mean:", "")
                 line = line.replace("[J]", "")  
                 line = line.replace(" ", "")
-                output_file.write(","+ line)
+                line = line.replace("\n", "")
+                output_file.write(", "+ line)
+            if "kernel-energy-max:" in line:
+                line = line.replace("kernel-energy-max:", "")
+                line = line.replace("[J]", "")  
+                line = line.replace(" ", "")
+                output_file.write(", "+ line)
+            
             
                     
 
