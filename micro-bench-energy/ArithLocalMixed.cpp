@@ -81,14 +81,14 @@ public:
             int rai, rbi, rci, rdi;
 
             raf = in_float_local_acc[j];
-            rbf = in_float_local_acc[LocalSize - j];
+            rbf = in_float_local_acc[LocalSize - 1 - j];
             rcf = in_float_local_acc[j];
-            rdf = in_float_local_acc[LocalSize - j];
+            rdf = in_float_local_acc[LocalSize - 1 - j];
 
             rai = in_int_local_acc[j];
-            rbi = in_int_local_acc[LocalSize - j];
+            rbi = in_int_local_acc[LocalSize - 1 - j];
             rci = in_int_local_acc[j];
-            rdi = in_int_local_acc[LocalSize - j];
+            rdi = in_int_local_acc[LocalSize - 1 - j];
 
 #pragma unroll
             for(int i = 0; i < AddPercFloat; i++) {
