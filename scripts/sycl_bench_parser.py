@@ -13,7 +13,7 @@ out_dir=sys.argv[2]
 for file in os.listdir(work_dir):
     out_file = file.replace(".log","")
     with open(work_dir+"/"+file, "r") as input_file, open(out_dir+"/"+out_file+"_parsed.csv", "w") as output_file:
-        output_file.write("kernel-name,size,num-iters,core-freq,memory-freq,kernel-time [s],run-time [s],mean-energy [J], max-energy\n")
+        output_file.write("kernel-name,size,num-iters,core-freq,memory-freq,kernel-time [s],run-time [s],mean-energy [J],max-energy [J]\n")
         for line in input_file:
             if "Results for" in line:
                 line = line.replace("*", "")
