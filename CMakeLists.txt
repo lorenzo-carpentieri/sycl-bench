@@ -48,10 +48,11 @@ if(SYCL_IMPL STREQUAL "hipSYCL")
 elseif(SYCL_IMPL STREQUAL "LLVM")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsycl")
 elseif(SYCL_IMPL STREQUAL "LLVM-CUDA")
-  set(CMAKE_CXX_FLAGS
-    "${CMAKE_CXX_FLAGS}")
-elseif(SYCL_IMPL STREQUAL "triSYCL")
-  find_package(TriSYCL MODULE REQUIRED)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsycl -fsycl-targets=nvptx64-nvidia-cuda")
+  set(SYCL_BENCH_CUDA_ARCH "" CACHE STRING "CUDA architecture in format \"sm_xy\"") 
+  if(NOT SYCL_BENCH_CUDA_ARCH STREQUAL "")
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Xsycl-target-backend --cuda-gpu-arch=${SYCL_BENCH_CUDA_ARCH}")
+  endif()
 endif()
 
 set(benchmarks
@@ -61,6 +62,17 @@ set(benchmarks
   # micro/pattern_L2.cpp
   # micro/sf.cpp
   # micro/local_mem.cpp
+
+  
+  micro-bench-energy/ArithMixedUnitOp.cpp
+  micro-bench-energy/GlobalMemory.cpp  
+  micro-bench-energy/ArithSingleUnit.cpp
+  micro-bench-energy/L2Unit.cpp
+  micro-bench-energy/LocalMemory.cpp
+
+
+  # micro-bench-energy/ArithLocalMixed.cpp  
+
 
   # single-kernel/median.cpp
   # single-kernel/sobel.cpp
@@ -106,21 +118,11 @@ set(benchmarks
   # polybench/syr2k.cpp
   # polybench/syrk.cpp
 
-  micro-bench-energy/Arithmetic.cpp
-  micro-bench-energy/GlobalMemory.cpp
-  micro-bench-energy/LocalMemory.cpp
-  micro-bench-energy/SpecialFunctions.cpp
-  micro-bench-energy/ArithmeticLocalMemory.cpp
-
-
-
-
   # Not working
   # compiletime/compiletime.cpp
   # runtime/dag_task_throughput_sequential.cpp
   # runtime/dag_task_throughput_independent.cpp
   # single-kernel/scalar_prod.cpp
-
 )
 
 foreach(benchmark IN LISTS benchmarks)
@@ -148,10 +150,6 @@ foreach(benchmark IN LISTS benchmarks)
     target_compile_definitions(${target} PRIVATE __LLVM_SYCL_CUDA__)
   endif()
 
-  if(SYCL_IMPL STREQUAL "triSYCL")
-    add_sycl_to_target(${target})
-    target_compile_definitions(${target} PRIVATE __TRISYCL__)
-  endif()
 
   install(TARGETS ${target} RUNTIME DESTINATION bin/benchmarks/)
   get_filename_component(dir ${benchmark} DIRECTORY)
@@ -160,8 +158,12 @@ endforeach(benchmark)
 
 # The "compiletime" target should only be used in the context of the compile time evaluation script
 # set_target_properties(compiletime PROPERTIES EXCLUDE_FROM_ALL 1)
+
 if(ENABLED_SYNERGY)
   add_subdirectory(SYnergy)
 endif()
+
+
+# add_subdirectory(micro-bench-energy)
 install(PROGRAMS bin/run-suite DESTINATION bin/)
 install(FILES ${PROJECT_SOURCE_DIR}/Brommy.bmp DESTINATION share/)
