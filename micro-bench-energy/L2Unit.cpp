@@ -4,7 +4,7 @@
 using namespace sycl;
 
 template <typename ValueType>
-class GlobalMemory{
+class L2Unit{
   protected:
     size_t size;
     size_t iters;
@@ -14,7 +14,7 @@ class GlobalMemory{
     PrefetchedBuffer<ValueType, 1> a_buf;
     PrefetchedBuffer<ValueType, 1> c1_buf;
   public:
-    GlobalMemory(BenchmarkArgs& _args):args(_args){}
+    L2Unit(BenchmarkArgs& _args):args(_args){}
 
     void setup(){
       size = args.problem_size;
@@ -32,26 +32,28 @@ class GlobalMemory{
 
     void run(std::vector<sycl::event>& events){
       // Launch the computation
-      event e = args.device_queue.submit([&](handler& h) {
-      auto a_acc = a_buf.template get_access<sycl::access_mode::read_write>(h);
-      auto c1_acc = c1_buf.template get_access<sycl::access_mode::read_write>(h);
+      sycl::event e = args.device_queue.submit([&](handler& h) {
+        auto a_acc = a_buf.template get_access<sycl::access_mode::read_write>(h);
+        auto c1_acc = c1_buf.template get_access<sycl::access_mode::read_write>(h);
 
-      range<1> grid{size};
+        range<1> grid{size};
 
-      h.parallel_for(grid, [=, _size=size, compute_iters=iters](sycl::id<1> id) {
-        constexpr size_t unrolls = 32;
-        constexpr size_t stride = 32 * 1024; // size must be at least 1MB elements
-        int gid = id.get(0);
-        ValueType r0;
+        h.parallel_for(grid, [=, compute_iters=iters](sycl::id<1> id) {
+          constexpr size_t unrolls = 32;
+          int gid = id.get(0);
+          ValueType r0;
 
-        for (int j = 0; j < compute_iters; j += unrolls) {
-            #pragma unroll
-            for (int i = 0; i < unrolls; i++) {
-              r0 = a_acc[(gid + stride * i) % _size];
-              c1_acc[(gid + stride * i) % _size] = r0;
+          for (int k = 0; k < 10; k++) {
+            for (int j = 0; j < compute_iters; j += unrolls) {
+              #pragma unroll
+              for (int i = 0; i < unrolls; i++) {
+                r0 = a_acc[gid];
+                c1_acc[gid] = r0;
+              }
             }
           }
-        });// end parallel for
+          c1_acc[gid] = r0;
+        }); // end parallel for
       }); // end submit
       
       events.push_back(e);
@@ -59,7 +61,7 @@ class GlobalMemory{
 
 
     static std::string getBenchmarkName() {
-    std::string name = "GlobalMemory_";
+    std::string name = "L2Unit_";
     name.append(std::is_same_v<ValueType, int> ? "int" : "float");
     return name;
   }
@@ -69,8 +71,8 @@ class GlobalMemory{
 
 
 
-// 1048576 1000000
+// 1000000 131072
 int main(int argc, char** argv) {
   BenchmarkApp app(argc, argv);
-  app.run<GlobalMemory<float>>();
+  app.run<L2Unit<float>>();
 }

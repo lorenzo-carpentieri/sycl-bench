@@ -43,6 +43,7 @@ public:
     args.result_consumer->consumeResult("problem-size", std::to_string(args.problem_size));
     args.result_consumer->consumeResult("local-size", std::to_string(args.local_size));
     #ifdef __ENABLED_SYNERGY
+      args.result_consumer->consumeResult("num-iters", std::to_string(args.num_iterations));
       args.result_consumer->consumeResult("core-freq", std::to_string(args.core_freq));
       args.result_consumer->consumeResult("memory-freq", std::to_string(args.memory_freq));
     #endif
