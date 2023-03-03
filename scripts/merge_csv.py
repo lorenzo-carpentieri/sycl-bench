@@ -15,23 +15,40 @@ features_csv_dir=sys.argv[2]
 merged_csv_dir=sys.argv[3]
 
 
-sycl_bench_files=[]
-features_files=[]
+sycl_bench_files={}
+features_files={}
 
+for features_file in os.listdir(features_csv_dir):
+    kernel = features_file.replace("_features.csv", "")
+    sycl_bench_files[kernel] = []
+    features_files[kernel] = []
 
-for file in os.listdir(sycl_bench_csv_dir):
-    sycl_bench_files.append(sycl_bench_csv_dir+"/"+file)
-    # print(sycl_bench_csv_dir+"/"+file)
-for file in os.listdir(features_csv_dir):
-    features_files.append(""+features_csv_dir+"/"+file)
-    # print(features_csv_dir+"/"+file)
+    for sycl_bench_file in os.listdir(sycl_bench_csv_dir):
 
-for sbench_file, features_file in zip(sycl_bench_files, features_files):
-    df_sbench = pd.read_csv(sbench_file)
-    df_features = pd.read_csv(features_file)
-    # remove feature kernel name
-    df_features = df_features.drop(df_features.columns[0], axis=1)
-    df_merged = pd.concat([df_sbench, df_features], axis=1)
-    df_merged.to_csv(merged_csv_dir+"/merged"+df_sbench['kernel-name'].values[0]+".csv" , index=False, float_format='%.8f')
+        if kernel in sycl_bench_file:
+            features_files[kernel].append(features_csv_dir+"/"+features_file)
+            # print(features_csv_dir+"/"+file)
+            sycl_bench_files[kernel].append(sycl_bench_csv_dir+"/"+sycl_bench_file)
+            # print(sycl_bench_csv_dir+"/"+file)
 
-    print(df_merged)
+# print(sycl_bench_files)
+# print(features_files)
+
+df_all = pd.DataFrame()
+for kernel in sycl_bench_files:
+    df_kernel = pd.DataFrame()
+
+    for sbench_file, features_file in zip(sycl_bench_files[kernel], features_files[kernel]):
+        df_sbench = pd.read_csv(sbench_file)
+        df_features = pd.read_csv(features_file)
+        # remove feature kernel name
+        df_features = df_features.drop(df_features.columns[0], axis=1)
+        df_merged = pd.concat([df_sbench, df_features], axis=1)
+        df_kernel = pd.concat([df_kernel, df_merged], ignore_index=True)
+
+    df_all = pd.concat([df_all, df_kernel], ignore_index=True)
+    df_kernel.to_csv(merged_csv_dir+"/merged_"+kernel+".csv" , index=False, float_format='%.8f')
+
+df_all.to_csv(merged_csv_dir+"/merged_all.csv" , index=False, float_format='%.8f')
+
+    # print(df_merged)
