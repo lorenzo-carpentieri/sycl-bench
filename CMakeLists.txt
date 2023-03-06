@@ -67,7 +67,8 @@ set(benchmarks
   micro-bench-energy/ArithMixedUnitOp.cpp
   micro-bench-energy/ArithMixedUnitType.cpp
   micro-bench-energy/ArithSingleUnit.cpp
-  micro-bench-energy/GlobalMemory.cpp  
+  micro-bench-energy/GlobalMemory.cpp
+  micro-bench-energy/GlobalMemory2.cpp
   micro-bench-energy/L2Unit.cpp
   micro-bench-energy/LocalMemory.cpp
 
