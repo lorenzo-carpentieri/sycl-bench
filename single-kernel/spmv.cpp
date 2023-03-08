@@ -89,23 +89,22 @@ public:
 
       s::range<1> ndrange{size};
 
-      cgh.parallel_for<class SpmvKernel>(ndrange,
-          [this, row_b_acc, row_e_acc, vec_acc, val_acc, col_acc, output_acc, num_elements = size](s::id<1> id) {
-            int gid = id[0];
-            if(gid >= num_elements)
-              return;
+      cgh.parallel_for<class SpmvKernel>(ndrange, [=, num_elements = size, num_iters = num_iters](s::id<1> id) {
+        int gid = id[0];
+        if(gid >= num_elements)
+          return;
 
-            for(size_t i = 0; i < num_iters; i++) {
-              int sum = 0;
-              int start = row_b_acc[gid];
-              int stop = row_e_acc[gid];
-              for(int j = start; j < stop; ++j) {
-                int c = col_acc[j];
-                sum += val_acc[j] * vec_acc[c];
-              }
-              output_acc[gid] = sum;
-            }
-          });
+        for(size_t i = 0; i < num_iters; i++) {
+          int sum = 0;
+          int start = row_b_acc[gid];
+          int stop = row_e_acc[gid];
+          for(int j = start; j < stop; ++j) {
+            int c = col_acc[j];
+            sum += val_acc[j] * vec_acc[c];
+          }
+          output_acc[gid] = sum;
+        }
+      });
     }));
   }
 

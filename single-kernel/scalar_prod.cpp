@@ -65,16 +65,17 @@ public:
       if(Use_ndrange) {
         sycl::nd_range<1> ndrange(args.problem_size, args.local_size);
 
-        cgh.parallel_for<class ScalarProdKernel<T, Use_ndrange>>(ndrange, [=](sycl::nd_item<1> item) {
-          for(size_t i = 0; i < num_iters; i++) {
-            size_t gid = item.get_global_linear_id();
-            intermediate_product[gid] = in1[gid] * in2[gid];
-          }
-        });
+        cgh.parallel_for<class ScalarProdKernel<T, Use_ndrange>>(
+            ndrange, [=, num_iters = num_iters](sycl::nd_item<1> item) {
+              for(size_t i = 0; i < num_iters; i++) {
+                size_t gid = item.get_global_linear_id();
+                intermediate_product[gid] = in1[gid] * in2[gid];
+              }
+            });
       } else {
         cgh.parallel_for_work_group<class ScalarProdKernelHierarchical<T, Use_ndrange>>(
             sycl::range<1>{args.problem_size / args.local_size}, sycl::range<1>{args.local_size},
-            [=](sycl::group<1> grp) {
+            [=, num_iters = num_iters](sycl::group<1> grp) {
               grp.parallel_for_work_item([&](sycl::h_item<1> idx) {
                 for(size_t i = 0; i < num_iters; i++) {
                   size_t gid = idx.get_global_id(0);

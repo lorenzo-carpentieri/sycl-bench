@@ -81,66 +81,65 @@ public:
 
       s::range<1> ndrange{size};
 
-      cgh.parallel_for<class MerseTwisterKernel>(
-          ndrange, [this, ma_acc, b_acc, c_acc, seed_acc, result_acc, length = size](s::id<1> id) {
-            int gid = id[0];
+      cgh.parallel_for<class MerseTwisterKernel>(ndrange, [=, length = size, num_iters = num_iters](s::id<1> id) {
+        int gid = id[0];
 
-            if(gid >= length)
-              return;
-            for(size_t i = 0; i < num_iters; i++) {
-              int iState, iState1, iStateM;
-              unsigned int mti, mti1, mtiM, x;
-              unsigned int matrix_a, mask_b, mask_c;
+        if(gid >= length)
+          return;
+        for(size_t i = 0; i < num_iters; i++) {
+          int iState, iState1, iStateM;
+          unsigned int mti, mti1, mtiM, x;
+          unsigned int matrix_a, mask_b, mask_c;
 
-              unsigned int mt[MT_NN]; // FIXME
+          unsigned int mt[MT_NN]; // FIXME
 
-              matrix_a = ma_acc[gid];
-              mask_b = b_acc[gid];
-              mask_c = c_acc[gid];
+          matrix_a = ma_acc[gid];
+          mask_b = b_acc[gid];
+          mask_c = c_acc[gid];
 
-              mt[0] = seed_acc[gid];
-              for(iState = 1; iState < MT_NN; iState++)
-                mt[iState] = (1812433253U * (mt[iState - 1] ^ (mt[iState - 1] >> 30)) + iState) & MT_WMASK;
+          mt[0] = seed_acc[gid];
+          for(iState = 1; iState < MT_NN; iState++)
+            mt[iState] = (1812433253U * (mt[iState - 1] ^ (mt[iState - 1] >> 30)) + iState) & MT_WMASK;
 
-              iState = 0;
-              mti1 = mt[0];
+          iState = 0;
+          mti1 = mt[0];
 
-              float tmp[5];
-              for(int i = 0; i < 4; ++i) {
-                iState1 = iState + 1;
-                iStateM = iState + MT_MM;
-                if(iState1 >= MT_NN)
-                  iState1 -= MT_NN;
-                if(iStateM >= MT_NN)
-                  iStateM -= MT_NN;
-                mti = mti1;
-                mti1 = mt[iState1];
-                mtiM = mt[iStateM];
+          float tmp[5];
+          for(int i = 0; i < 4; ++i) {
+            iState1 = iState + 1;
+            iStateM = iState + MT_MM;
+            if(iState1 >= MT_NN)
+              iState1 -= MT_NN;
+            if(iStateM >= MT_NN)
+              iStateM -= MT_NN;
+            mti = mti1;
+            mti1 = mt[iState1];
+            mtiM = mt[iStateM];
 
-                x = (mti & MT_UMASK) | (mti1 & MT_LMASK);
-                x = mtiM ^ (x >> 1) ^ ((x & 1) ? matrix_a : 0);
+            x = (mti & MT_UMASK) | (mti1 & MT_LMASK);
+            x = mtiM ^ (x >> 1) ^ ((x & 1) ? matrix_a : 0);
 
-                mt[iState] = x;
-                iState = iState1;
+            mt[iState] = x;
+            iState = iState1;
 
-                // Tempering transformation
-                x ^= (x >> MT_SHIFT0);
-                x ^= (x << MT_SHIFTB) & mask_b;
-                x ^= (x << MT_SHIFTC) & mask_c;
-                x ^= (x >> MT_SHIFT1);
+            // Tempering transformation
+            x ^= (x >> MT_SHIFT0);
+            x ^= (x << MT_SHIFTB) & mask_b;
+            x ^= (x << MT_SHIFTC) & mask_c;
+            x ^= (x >> MT_SHIFT1);
 
-                tmp[i] = ((float)x + 1.0f) / 4294967296.0f;
-              }
+            tmp[i] = ((float)x + 1.0f) / 4294967296.0f;
+          }
 
-              s::float4 val;
-              val.s0() = tmp[0];
-              val.s1() = tmp[1];
-              val.s2() = tmp[2];
-              val.s3() = tmp[3];
+          s::float4 val;
+          val.s0() = tmp[0];
+          val.s1() = tmp[1];
+          val.s2() = tmp[2];
+          val.s3() = tmp[3];
 
-              result_acc[gid] = val;
-            }
-          });
+          result_acc[gid] = val;
+        }
+      });
     }));
   }
 

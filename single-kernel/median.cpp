@@ -62,9 +62,9 @@ public:
             int y = gid[1];
 
             // Optimization note: this array can be prefetched in local memory, TODO
-            sycl::float4 window[9];
-
             for(size_t i = 0; i < num_iters; i++) {
+              sycl::float4 window[9];
+
               int k = 0;
               for(int i = -1; i < 2; i++)
                 for(int j = -1; j < 2; j++) {
@@ -74,51 +74,51 @@ public:
                   window[k] = in[{xs, ys}];
                   k++;
                 }
+
+              // (channel-wise) median selection using bitonic sorting
+              // the following network is used (Bose-Nelson algorithm):
+              // [[0,1],[2,3],[4,5],[7,8]]
+              // [[0,2],[1,3],[6,8]]
+              // [[1,2],[6,7],[5,8]]
+              // [[4,7],[3,8]]
+              // [[4,6],[5,7]]
+              // [[5,6],[2,7]]
+              // [[0,5],[1,6],[3,7]]
+              // [[0,4],[1,5],[3,6]]
+              // [[1,4],[2,5]]
+              // [[2,4],[3,5]]
+              // [[3,4]]
+              // se also http://pages.ripco.net/~jgamble/nw.html
+              swap(window, 0, 1);
+              swap(window, 2, 3);
+              swap(window, 0, 2);
+              swap(window, 1, 3);
+              swap(window, 1, 2);
+              swap(window, 4, 5);
+              swap(window, 7, 8);
+              swap(window, 6, 8);
+              swap(window, 6, 7);
+              swap(window, 4, 7);
+              swap(window, 4, 6);
+              swap(window, 5, 8);
+              swap(window, 5, 7);
+              swap(window, 5, 6);
+              swap(window, 0, 5);
+              swap(window, 0, 4);
+              swap(window, 1, 6);
+              swap(window, 1, 5);
+              swap(window, 1, 4);
+              swap(window, 2, 7);
+              swap(window, 3, 8);
+              swap(window, 3, 7);
+              swap(window, 2, 5);
+              swap(window, 2, 4);
+              swap(window, 3, 6);
+              swap(window, 3, 5);
+              swap(window, 3, 4);
+
+              out[gid] = window[4];
             }
-
-            // (channel-wise) median selection using bitonic sorting
-            // the following network is used (Bose-Nelson algorithm):
-            // [[0,1],[2,3],[4,5],[7,8]]
-            // [[0,2],[1,3],[6,8]]
-            // [[1,2],[6,7],[5,8]]
-            // [[4,7],[3,8]]
-            // [[4,6],[5,7]]
-            // [[5,6],[2,7]]
-            // [[0,5],[1,6],[3,7]]
-            // [[0,4],[1,5],[3,6]]
-            // [[1,4],[2,5]]
-            // [[2,4],[3,5]]
-            // [[3,4]]
-            // se also http://pages.ripco.net/~jgamble/nw.html
-            swap(window, 0, 1);
-            swap(window, 2, 3);
-            swap(window, 0, 2);
-            swap(window, 1, 3);
-            swap(window, 1, 2);
-            swap(window, 4, 5);
-            swap(window, 7, 8);
-            swap(window, 6, 8);
-            swap(window, 6, 7);
-            swap(window, 4, 7);
-            swap(window, 4, 6);
-            swap(window, 5, 8);
-            swap(window, 5, 7);
-            swap(window, 5, 6);
-            swap(window, 0, 5);
-            swap(window, 0, 4);
-            swap(window, 1, 6);
-            swap(window, 1, 5);
-            swap(window, 1, 4);
-            swap(window, 2, 7);
-            swap(window, 3, 8);
-            swap(window, 3, 7);
-            swap(window, 2, 5);
-            swap(window, 2, 4);
-            swap(window, 3, 6);
-            swap(window, 3, 5);
-            swap(window, 3, 4);
-
-            out[gid] = window[4];
           });
     }));
 

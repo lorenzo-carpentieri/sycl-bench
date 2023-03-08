@@ -65,11 +65,10 @@ public:
       auto dist_acc = buf_dists.get_access<s::access::mode::write>(cgh);
       auto neighbours_acc = buf_neighbors.get_access<s::access::mode::write>(cgh);
 
-
       s::range<1> ndrange{size};
 
-      cgh.parallel_for<class KnnKernel>(ndrange, [this, ref_acc, query_acc, dist_acc, neighbours_acc, numRef = nRef,
-                                                     numQuery = size](s::id<1> id) {
+      cgh.parallel_for<class KnnKernel>(ndrange, [=, numRef = nRef, numQuery = size, num_iters = num_iters](
+                                                     s::id<1> id) {
         size_t gid = id[0];
 
         if(gid >= numQuery)

@@ -15,7 +15,6 @@ protected:
   size_t local_size;
   size_t num_iters;
 
-  int numTimesteps;
   s::float2 origin;
   s::float2 cellSize;
   float startTime;
@@ -32,7 +31,7 @@ protected:
   PrefetchedBuffer<s::float2, 1> buf_flowMap;
 
 
-  s::float4 float4mul(s::float4 a, s::float4 b) {
+  static s::float4 float4mul(s::float4 a, s::float4 b) {
     s::float4 c;
     c.x() = a.x() * b.x() + a.y() * b.y();
     c.y() = a.x() * b.y() + a.y() * b.w();
@@ -41,7 +40,7 @@ protected:
     return c;
   }
 
-  s::float4 float4trp(s::float4 a) {
+  static s::float4 float4trp(s::float4 a) {
     s::float4 b = a;
     float x;
     x = b.y();
@@ -50,14 +49,14 @@ protected:
     return b;
   }
 
-  s::float4 float4symm(s::float4 a) {
+  static s::float4 float4symm(s::float4 a) {
     s::float4 b = float4trp(a);
     b = b + a;
     b = b * 0.5f;
     return b;
   }
 
-  s::float2 float4invariants(s::float4 m) {
+  static s::float2 float4invariants(s::float4 m) {
     s::float2 pqr;
     pqr.x() = m.x() * m.w() - m.y() * m.z();
     pqr.y() = -(m.x() + m.w());
@@ -65,7 +64,7 @@ protected:
   }
 
 
-  s::float2 float2squareroots(s::float2 a) {
+  static s::float2 float2squareroots(s::float2 a) {
     float discrim, root;
     s::float2 b;
     discrim = a.y() * a.y() - 4 * a.x();
@@ -83,7 +82,7 @@ protected:
   }
 
 
-  s::float2 float4eigenvalues(s::float4 m) {
+  static s::float2 float4eigenvalues(s::float4 m) {
     s::float2 pqr;
     pqr = float4invariants(m);
     return (float2squareroots(pqr));
@@ -114,8 +113,6 @@ public:
     local_size = args.local_size; // set local work_group size
     num_iters = args.num_iterations;
 
-
-    int numTimesteps = 4;
     origin = {0.f, 0.f};
     cellSize = {0.1f, 0.1f};
     startTime = 1.0f;
@@ -148,8 +145,8 @@ public:
       s::range<1> ndrange{size};
 
       cgh.parallel_for<class FtleKernel>(
-          ndrange, [this, flowMap_acc, width_ = width, dataCellSize = cellSize, advectionTime_ = advectionTime,
-                       output_acc, num_elements = size](s::id<1> id) {
+          ndrange, [=, width_ = width, dataCellSize = cellSize, advectionTime_ = advectionTime, num_elements = size,
+                       num_iters = num_iters](s::id<1> id) {
             int gid = id[0];
             if(gid >= num_elements)
               return;
@@ -185,7 +182,7 @@ public:
                 eigenvalues = eigenvalues + float4eigenvalues(cauchySymm);
                 float maxEigenvalue = s::max(eigenvalues.x(), eigenvalues.y());
 
-                output_acc[gid] = 1.0 / s::fabs(advectionTime) * s::log(s::sqrt(maxEigenvalue));
+                output_acc[gid] = 1.0 / s::fabs(advectionTime_) * s::log(s::sqrt(maxEigenvalue));
               }
             }
           });

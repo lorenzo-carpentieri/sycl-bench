@@ -112,7 +112,7 @@ public:
     device_mean = pow(2.718281828459045235f, device_mean);
     printf("Device mean is %f\n", device_mean);
 
-    return fabs(device_mean - host_mean) < 1.0f ? true : false;
+    return fabs(device_mean - host_mean) < host_mean * 2.f / 100.f ? true : false;
   }
 
 

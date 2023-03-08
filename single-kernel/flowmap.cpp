@@ -49,7 +49,7 @@ protected:
   }
 
 
-  s::float2 blend(float factor, s::float2 value1, s::float2 value2) {
+  static s::float2 blend(float factor, s::float2 value1, s::float2 value2) {
     float factor2 = 1.0f - factor;
     s::float2 tmp;
     tmp.x() = factor2 * value1.x() + factor * value2.x();
@@ -103,12 +103,13 @@ public:
       s::range<1> ndrange{size};
 
       cgh.parallel_for<class FlowMapKernel>(
-          ndrange, [this, data_acc, width_ = width, dataOrigin = origin, dataCellSize = cellSize, timesteps_acc,
-                       numTimesteps_ = numTimesteps, startTime_ = startTime, advectionTime_ = advectionTime, output_acc,
-                       num_elements = size](s::id<1> id) {
+          ndrange, [=, width_ = width, dataOrigin = origin, dataCellSize = cellSize, numTimesteps_ = numTimesteps,
+                       startTime_ = startTime, advectionTime_ = advectionTime, num_elements = size,
+                       num_iters = num_iters](s::id<1> id) {
             int gid = id[0];
             if(gid >= num_elements)
               return;
+
             int tx = gid % width_;
             int ty = gid / width_;
 

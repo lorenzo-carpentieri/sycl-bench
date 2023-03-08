@@ -32,7 +32,7 @@ public:
   KmeansBench(BenchmarkArgs& _args) : args(_args) {}
 
   void setup() {
-    num_iters = args.problem_size;
+    num_iters = args.num_iterations;
 
     // host memory allocation and initialization
     nfeatures = 2;

@@ -91,6 +91,7 @@ set(benchmarks
   single-kernel/spmv.cpp
   single-kernel/sinewave.cpp
   single-kernel/perlin.cpp
+  single-kernel/scalar_prod.cpp
 
   # pattern/segmentedreduction.cpp
   # pattern/reduction.cpp
@@ -118,7 +119,6 @@ set(benchmarks
   # compiletime/compiletime.cpp
   # runtime/dag_task_throughput_sequential.cpp
   # runtime/dag_task_throughput_independent.cpp
-  # single-kernel/scalar_prod.cpp
   # single-kernel/nbody.cpp
 )
 

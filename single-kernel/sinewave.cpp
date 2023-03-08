@@ -40,10 +40,9 @@ public:
     events.push_back(args.device_queue.submit([&](s::handler& cgh) {
       auto output_acc = buf_output.get_access<s::access::mode::write>(cgh);
 
-
       s::range<1> ndrange{size};
 
-      cgh.parallel_for<class SinewaveKernel>(ndrange, [this, output_acc, num_elements = size](s::id<1> id) {
+      cgh.parallel_for<class SinewaveKernel>(ndrange, [=, num_elements = size, num_iters = num_iters](s::id<1> id) {
         int gid = id[0];
         if(gid >= num_elements)
           return;
