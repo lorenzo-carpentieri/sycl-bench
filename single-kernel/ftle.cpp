@@ -13,6 +13,8 @@ class Ftle {
 protected:
   size_t size; // user-defined size (input and output will be size x size)
   size_t local_size;
+  size_t num_iters;
+
   int numTimesteps;
   s::float2 origin;
   s::float2 cellSize;
@@ -23,7 +25,7 @@ protected:
   std::vector<s::float2> output;
 
 
-   BenchmarkArgs& args;
+  BenchmarkArgs& args;
 
 
   PrefetchedBuffer<s::float2, 1> buf_output;
@@ -110,6 +112,7 @@ public:
   void setup() {
     size = args.problem_size;     // input size defined by the user
     local_size = args.local_size; // set local work_group size
+    num_iters = args.num_iterations;
 
 
     int numTimesteps = 4;
@@ -153,35 +156,37 @@ public:
             int tx = gid % width_;
             int ty = gid / width_;
 
-            if(tx >= 1 && tx < (width_ - 1) && ty >= 1 && ty < num_elements / width_ - 1) {
-              s::float2 left = flowMap_acc[gid - 1];
-              s::float2 right = flowMap_acc[gid + 1];
-              s::float2 top = flowMap_acc[gid - width_];
-              s::float2 bottom = flowMap_acc[gid + width_];
+            for(size_t i = 0; i < num_iters; i++) {
+              if(tx >= 1 && tx < (width_ - 1) && ty >= 1 && ty < num_elements / width_ - 1) {
+                s::float2 left = flowMap_acc[gid - 1];
+                s::float2 right = flowMap_acc[gid + 1];
+                s::float2 top = flowMap_acc[gid - width_];
+                s::float2 bottom = flowMap_acc[gid + width_];
 
-              s::float2 delta2;
-              delta2.x() = 2.0f * dataCellSize.x();
-              delta2.y() = 2.0f * dataCellSize.y();
+                s::float2 delta2;
+                delta2.x() = 2.0f * dataCellSize.x();
+                delta2.y() = 2.0f * dataCellSize.y();
 
-              s::float4 jacobi;
-              jacobi.x() = (right.x() - left.x()) / delta2.x();
-              jacobi.y() = (bottom.x() - top.x()) / delta2.y();
-              jacobi.z() = (right.y() - left.y()) / delta2.x();
-              jacobi.w() = (bottom.y() - top.y()) / delta2.y();
+                s::float4 jacobi;
+                jacobi.x() = (right.x() - left.x()) / delta2.x();
+                jacobi.y() = (bottom.x() - top.x()) / delta2.y();
+                jacobi.z() = (right.y() - left.y()) / delta2.x();
+                jacobi.w() = (bottom.y() - top.y()) / delta2.y();
 
-              s::float4 jacobiT, cauchy, cauchySymm;
-              jacobiT = float4trp(jacobi);
-              cauchy = float4mul(jacobiT, jacobi);
-              cauchySymm = float4symm(cauchy);
+                s::float4 jacobiT, cauchy, cauchySymm;
+                jacobiT = float4trp(jacobi);
+                cauchy = float4mul(jacobiT, jacobi);
+                cauchySymm = float4symm(cauchy);
 
-              s::float2 eigenvalues;
-              eigenvalues = float4eigenvalues(cauchySymm);
-              eigenvalues = eigenvalues + float4eigenvalues(cauchySymm);
-              eigenvalues = eigenvalues + float4eigenvalues(cauchySymm);
-              eigenvalues = eigenvalues + float4eigenvalues(cauchySymm);
-              float maxEigenvalue = s::max(eigenvalues.x(), eigenvalues.y());
+                s::float2 eigenvalues;
+                eigenvalues = float4eigenvalues(cauchySymm);
+                eigenvalues = eigenvalues + float4eigenvalues(cauchySymm);
+                eigenvalues = eigenvalues + float4eigenvalues(cauchySymm);
+                eigenvalues = eigenvalues + float4eigenvalues(cauchySymm);
+                float maxEigenvalue = s::max(eigenvalues.x(), eigenvalues.y());
 
-              output_acc[gid] = 1.0 / s::fabs(advectionTime) * s::log(s::sqrt(maxEigenvalue));
+                output_acc[gid] = 1.0 / s::fabs(advectionTime) * s::log(s::sqrt(maxEigenvalue));
+              }
             }
           });
     }));

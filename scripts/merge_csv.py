@@ -25,7 +25,8 @@ for features_file in os.listdir(features_csv_dir):
 
     for sycl_bench_file in os.listdir(sycl_bench_csv_dir):
 
-        if kernel in sycl_bench_file:
+        # comparison is done on file names: kernel is from the csv file, sycl_bench_file is the parsed log .csv
+        if kernel == sycl_bench_file.split("_")[0]: # we only take the kernel name from the sycl-bench result file
             features_files[kernel].append(features_csv_dir+"/"+features_file)
             # print(features_csv_dir+"/"+file)
             sycl_bench_files[kernel].append(sycl_bench_csv_dir+"/"+sycl_bench_file)
@@ -49,6 +50,6 @@ for kernel in sycl_bench_files:
     df_all = pd.concat([df_all, df_kernel], ignore_index=True)
     df_kernel.to_csv(merged_csv_dir+"/merged_"+kernel+".csv" , index=False, float_format='%.8f')
 
-df_all.to_csv(merged_csv_dir+"/merged_all.csv" , index=False, float_format='%.8f')
+# df_all.to_csv(merged_csv_dir+"/merged_all.csv" , index=False, float_format='%.8f')
 
     # print(df_merged)

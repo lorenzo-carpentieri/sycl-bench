@@ -7,6 +7,7 @@ class MolecularDynamicsKernel;
 
 class MolecularDynamicsBench {
 protected:
+  size_t num_iters;
   std::vector<s::float4> input;
   std::vector<s::float4> output;
   std::vector<int> neighbour;
@@ -15,7 +16,7 @@ protected:
   int lj1;
   float lj2;
   int inum;
-   BenchmarkArgs& args;
+  BenchmarkArgs& args;
 
   PrefetchedBuffer<s::float4, 1> input_buf;
   PrefetchedBuffer<int, 1> neighbour_buf;
@@ -25,6 +26,8 @@ public:
   MolecularDynamicsBench(BenchmarkArgs& _args) : args(_args) {}
 
   void setup() {
+    num_iters = args.num_iterations;
+
     // host memory allocation and initialization
     neighCount = 15;
     cutsq = 50;
@@ -59,36 +62,38 @@ public:
 
       cgh.parallel_for<class MolecularDynamicsKernel>(
           ndrange, [=, problem_size = args.problem_size, neighCount_ = neighCount, inum_ = inum, cutsq_ = cutsq,
-                       lj1_ = lj1, lj2_ = lj2](sycl::id<1> idx) {
+                       lj1_ = lj1, lj2_ = lj2, num_iters = num_iters](sycl::id<1> idx) {
             size_t gid = idx[0];
 
             if(gid < problem_size) {
-              s::float4 ipos = in[gid];
-              s::float4 f = {0.0f, 0.0f, 0.0f, 0.0f};
-              int j = 0;
-              while(j < neighCount_) {
-                int jidx = neigh[j * inum_ + gid];
-                s::float4 jpos = in[jidx];
+              for(size_t i = 0; i < num_iters; i++) {
+                s::float4 ipos = in[gid];
+                s::float4 f = {0.0f, 0.0f, 0.0f, 0.0f};
+                int j = 0;
+                while(j < neighCount_) {
+                  int jidx = neigh[j * inum_ + gid];
+                  s::float4 jpos = in[jidx];
 
-                // Calculate distance
-                float delx = ipos.x() - jpos.x();
-                float dely = ipos.y() - jpos.y();
-                float delz = ipos.z() - jpos.z();
-                float r2inv = delx * delx + dely * dely + delz * delz;
+                  // Calculate distance
+                  float delx = ipos.x() - jpos.x();
+                  float dely = ipos.y() - jpos.y();
+                  float delz = ipos.z() - jpos.z();
+                  float r2inv = delx * delx + dely * dely + delz * delz;
 
-                // If distance is less than cutoff, calculate force
-                if(r2inv < cutsq_) {
-                  r2inv = 10.0f / r2inv;
-                  float r6inv = r2inv * r2inv * r2inv;
-                  float forceC = r2inv * r6inv * (lj1_ * r6inv - lj2_);
+                  // If distance is less than cutoff, calculate force
+                  if(r2inv < cutsq_) {
+                    r2inv = 10.0f / r2inv;
+                    float r6inv = r2inv * r2inv * r2inv;
+                    float forceC = r2inv * r6inv * (lj1_ * r6inv - lj2_);
 
-                  f.x() += delx * forceC;
-                  f.y() += dely * forceC;
-                  f.z() += delz * forceC;
+                    f.x() += delx * forceC;
+                    f.y() += dely * forceC;
+                    f.z() += delz * forceC;
+                  }
+                  j++;
                 }
-                j++;
+                out[gid] = f;
               }
-              out[gid] = f;
             }
           });
     }));

@@ -73,7 +73,7 @@ public:
 
         sycl::group_barrier(group);
 
-        for(int i = 0; i < num_iters; i++) {
+        for(size_t i = 0; i < num_iters; i++) {
 
 #pragma unroll
           for(size_t j = 0; j < LocalSize; j++) {

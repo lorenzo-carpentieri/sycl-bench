@@ -13,11 +13,13 @@ class GeometricMean {
 protected:
   size_t size;
   size_t local_size;
+  size_t num_iters;
+
   int chunkSize;
   std::vector<s::float16> input;
   std::vector<float> output;
 
-   BenchmarkArgs& args;
+  BenchmarkArgs& args;
 
 
   PrefetchedBuffer<s::float16, 1> buf_input;
@@ -44,6 +46,8 @@ public:
   void setup() {
     size = args.problem_size;     // input size defined by the user
     local_size = args.local_size; // set local work_group size
+    num_iters = args.num_iterations;
+
 
     chunkSize = 16;
     input.resize(size);
@@ -66,23 +70,25 @@ public:
       s::range<1> ndrange{size};
 
       cgh.parallel_for<class GeometricMeanKernel>(
-          ndrange, [input_acc, output_acc, chunkSize_ = chunkSize, size_ = size](s::id<1> id) {
+          ndrange, [input_acc, output_acc, chunkSize_ = chunkSize, size_ = size, num_iters = num_iters](s::id<1> id) {
             int gid = id[0];
 
             if(gid >= size_)
               return;
 
-            s::float16 val = input_acc[gid];
+            for(size_t i = 0; i < num_iters; i++) {
+              s::float16 val = input_acc[gid];
 
-            float mean = s::log(val.s0()) + s::log(val.s1()) + s::log(val.s2()) + s::log(val.s3()) + s::log(val.s4()) +
-                         s::log(val.s5()) + s::log(val.s6()) + s::log(val.s7()) + s::log(val.s8()) + s::log(val.s9()) +
-                         s::log(val.sA()) + s::log(val.sB()) + s::log(val.sC()) + s::log(val.sD()) + s::log(val.sE()) +
-                         s::log(val.sF());
-            mean /= chunkSize_;
+              float mean = s::log(val.s0()) + s::log(val.s1()) + s::log(val.s2()) + s::log(val.s3()) +
+                           s::log(val.s4()) + s::log(val.s5()) + s::log(val.s6()) + s::log(val.s7()) +
+                           s::log(val.s8()) + s::log(val.s9()) + s::log(val.sA()) + s::log(val.sB()) +
+                           s::log(val.sC()) + s::log(val.sD()) + s::log(val.sE()) + s::log(val.sF());
+              mean /= chunkSize_;
 
-            float euler = 2.718281828459045235f;
+              float euler = 2.718281828459045235f;
 
-            output_acc[gid] = s::pow(euler, mean);
+              output_acc[gid] = s::pow(euler, mean);
+            }
           });
     }));
   }

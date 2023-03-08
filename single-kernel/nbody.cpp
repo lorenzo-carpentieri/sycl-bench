@@ -13,13 +13,14 @@ class HierarchicalNBodyKernel;
 template <class float_type>
 class NBody {
 protected:
+  size_t num_iters;
   using particle_type = sycl::vec<float_type, 4>;
   using vector_type = sycl::vec<float_type, 3>;
 
   std::vector<particle_type> particles;
   std::vector<vector_type> velocities;
 
-   BenchmarkArgs& args;
+  BenchmarkArgs& args;
 
 
   const float_type gravitational_softening;
@@ -37,6 +38,8 @@ public:
   }
 
   void setup() {
+    num_iters = args.num_iterations;
+
     particles.resize(args.problem_size);
     velocities.resize(args.problem_size);
 

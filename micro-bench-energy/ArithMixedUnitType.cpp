@@ -68,7 +68,7 @@ public:
           rci = rcf = in_acc[gid];
           rdi = rdf = in_acc[size - gid];
 
-          for(int i = 0; i < num_iters; i++) {
+          for(size_t i = 0; i < num_iters; i++) {
 
 #pragma unroll
             for(int i = 0; i < AddPercFloat; i++) {

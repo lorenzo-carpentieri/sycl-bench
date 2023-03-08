@@ -22,10 +22,12 @@ class ScalarProdGatherKernel;
 template <typename T, bool Use_ndrange = true>
 class ScalarProdBench {
 protected:
+  size_t num_iters;
+
   std::vector<T> input1;
   std::vector<T> input2;
   std::vector<T> output;
-   BenchmarkArgs& args;
+  BenchmarkArgs& args;
 
   PrefetchedBuffer<T, 1> input1_buf;
   PrefetchedBuffer<T, 1> input2_buf;
@@ -35,6 +37,8 @@ public:
   ScalarProdBench(BenchmarkArgs& _args) : args(_args) {}
 
   void setup() {
+    num_iters = args.num_iterations;
+
     // host memory allocation and initialization
     input1.resize(args.problem_size);
     input2.resize(args.problem_size);
@@ -62,16 +66,20 @@ public:
         sycl::nd_range<1> ndrange(args.problem_size, args.local_size);
 
         cgh.parallel_for<class ScalarProdKernel<T, Use_ndrange>>(ndrange, [=](sycl::nd_item<1> item) {
-          size_t gid = item.get_global_linear_id();
-          intermediate_product[gid] = in1[gid] * in2[gid];
+          for(size_t i = 0; i < num_iters; i++) {
+            size_t gid = item.get_global_linear_id();
+            intermediate_product[gid] = in1[gid] * in2[gid];
+          }
         });
       } else {
         cgh.parallel_for_work_group<class ScalarProdKernelHierarchical<T, Use_ndrange>>(
             sycl::range<1>{args.problem_size / args.local_size}, sycl::range<1>{args.local_size},
             [=](sycl::group<1> grp) {
               grp.parallel_for_work_item([&](sycl::h_item<1> idx) {
-                size_t gid = idx.get_global_id(0);
-                intermediate_product[gid] = in1[gid] * in2[gid];
+                for(size_t i = 0; i < num_iters; i++) {
+                  size_t gid = idx.get_global_id(0);
+                  intermediate_product[gid] = in1[gid] * in2[gid];
+                }
               });
             });
       }

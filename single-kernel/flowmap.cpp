@@ -13,6 +13,8 @@ class FlowMap {
 protected:
   size_t size;
   size_t local_size;
+  size_t num_iters;
+
   int numTimesteps;
   s::float2 origin;
   s::float2 cellSize;
@@ -23,7 +25,7 @@ protected:
   std::vector<float> timesteps;
   std::vector<s::float2> flowMap;
 
-   BenchmarkArgs& args;
+  BenchmarkArgs& args;
 
 
   PrefetchedBuffer<s::float2, 1> buf_data;
@@ -62,6 +64,8 @@ public:
   void setup() {
     size = args.problem_size;     // input size defined by the user
     local_size = args.local_size; // set local work_group size
+    num_iters = args.num_iterations;
+
 
     numTimesteps = 4;
     origin = {0.f, 0.f};
@@ -108,90 +112,92 @@ public:
             int tx = gid % width_;
             int ty = gid / width_;
 
-            const unsigned int numSteps = 1000;
-            float timestep = advectionTime_ / numSteps;
+            for(size_t i = 0; i < num_iters; i++) {
+              const unsigned int numSteps = 1000;
+              float timestep = advectionTime_ / numSteps;
 
-            s::float2 pos;
-            pos.x() = dataOrigin.x() + tx * dataCellSize.x();
-            pos.y() = dataOrigin.y() + ty * dataCellSize.y();
+              s::float2 pos;
+              pos.x() = dataOrigin.x() + tx * dataCellSize.x();
+              pos.y() = dataOrigin.y() + ty * dataCellSize.y();
 
-            for(unsigned int step = 0; step < numSteps; ++step) {
-              float currentTime = startTime_ + step * timestep;
+              for(unsigned int step = 0; step < numSteps; ++step) {
+                float currentTime = startTime_ + step * timestep;
 
-              // previous time index
-              int prevIndex = -1;
+                // previous time index
+                int prevIndex = -1;
 
-              for(unsigned int previous = 0; previous < numTimesteps_; ++previous) {
-                if(timesteps_acc[previous] <= currentTime)
-                  prevIndex = previous;
+                for(unsigned int previous = 0; previous < numTimesteps_; ++previous) {
+                  if(timesteps_acc[previous] <= currentTime)
+                    prevIndex = previous;
+                }
+
+                if(prevIndex < 0 || prevIndex > numTimesteps_ - 2) {
+                  output_acc[gid].x() = 0;
+                  output_acc[gid].y() = 0;
+                  return;
+                }
+
+                // next time index
+                int nextIndex = prevIndex + 1;
+
+                s::float2 interpolatedPrev;
+                s::float2 interpolatedNext;
+
+                s::float2 posW;
+                posW.x() = (pos.x() - dataOrigin.x()) / dataCellSize.x();
+                posW.y() = (pos.y() - dataOrigin.y()) / dataCellSize.y();
+
+                // posXi,posYi is integral coordinate of "upper left corner"
+                float posX = s::floor(posW.x());
+                float posY = s::floor(posW.y());
+
+                posX = s::clamp(posX, 0.0f, (float)(width_ - 2));
+                posY = s::clamp(posY, 0.0f, (float)(width_ - 2));
+
+                // get local coordinates
+                s::float2 lpos;
+                lpos.x() = s::clamp((float)(posW.x() - posX), 0.0f, 1.0f);
+                lpos.y() = s::clamp((float)(posW.y() - posY), 0.0f, 1.0f);
+
+                int posXi = (int)posX;
+                int posYi = (int)posY;
+
+                unsigned int timeSlice1 = width_ * width_ * prevIndex;
+                unsigned int timeSlice2 = width_ * width_ * nextIndex;
+
+                s::float2 a;
+                a.x() = 0;
+                a.y() = 1;
+                s::float2 b;
+                b.x() = 3;
+                b.y() = 6;
+
+                s::float2 vecMid1 = blend(lpos.y(),
+                    blend(lpos.x(), data_acc[(posXi + 1) + posYi * width_ + timeSlice1],
+                        data_acc[(posXi + 1) + posYi * width_ + timeSlice1]),
+                    blend(lpos.x(), data_acc[posXi + (posYi + 1) * width_ + timeSlice1],
+                        data_acc[(posXi + 1) + (posYi + 1) * width_ + timeSlice1]));
+
+                s::float2 vecMid2 = blend(lpos.y(),
+                    blend(lpos.x(), data_acc[posXi + posYi * width_ + timeSlice2],
+                        data_acc[(posXi + 1) + posYi * width_ + timeSlice2]),
+                    blend(lpos.x(), data_acc[posXi + (posYi + 1) * width_ + timeSlice2],
+                        data_acc[(posXi + 1) + (posYi + 1) * width_ + timeSlice2]));
+
+
+                interpolatedPrev = vecMid1;
+                interpolatedNext = vecMid2;
+
+                float localTime =
+                    (currentTime - timesteps_acc[prevIndex]) / (timesteps_acc[nextIndex] - timesteps_acc[prevIndex]);
+
+                s::float2 interpolated = blend(localTime, interpolatedPrev, interpolatedNext);
+
+                pos.x() += interpolated.x() * timestep;
+                pos.y() += interpolated.y() * timestep;
               }
-
-              if(prevIndex < 0 || prevIndex > numTimesteps_ - 2) {
-                output_acc[gid].x() = 0;
-                output_acc[gid].y() = 0;
-                return;
-              }
-
-              // next time index
-              int nextIndex = prevIndex + 1;
-
-              s::float2 interpolatedPrev;
-              s::float2 interpolatedNext;
-
-              s::float2 posW;
-              posW.x() = (pos.x() - dataOrigin.x()) / dataCellSize.x();
-              posW.y() = (pos.y() - dataOrigin.y()) / dataCellSize.y();
-
-              // posXi,posYi is integral coordinate of "upper left corner"
-              float posX = s::floor(posW.x());
-              float posY = s::floor(posW.y());
-
-              posX = s::clamp(posX, 0.0f, (float)(width_ - 2));
-              posY = s::clamp(posY, 0.0f, (float)(width_ - 2));
-
-              // get local coordinates
-              s::float2 lpos;
-              lpos.x() = s::clamp((float)(posW.x() - posX), 0.0f, 1.0f);
-              lpos.y() = s::clamp((float)(posW.y() - posY), 0.0f, 1.0f);
-
-              int posXi = (int)posX;
-              int posYi = (int)posY;
-
-              unsigned int timeSlice1 = width_ * width_ * prevIndex;
-              unsigned int timeSlice2 = width_ * width_ * nextIndex;
-
-              s::float2 a;
-              a.x() = 0;
-              a.y() = 1;
-              s::float2 b;
-              b.x() = 3;
-              b.y() = 6;
-
-              s::float2 vecMid1 = blend(lpos.y(),
-                  blend(lpos.x(), data_acc[(posXi + 1) + posYi * width_ + timeSlice1],
-                      data_acc[(posXi + 1) + posYi * width_ + timeSlice1]),
-                  blend(lpos.x(), data_acc[posXi + (posYi + 1) * width_ + timeSlice1],
-                      data_acc[(posXi + 1) + (posYi + 1) * width_ + timeSlice1]));
-
-              s::float2 vecMid2 = blend(lpos.y(),
-                  blend(lpos.x(), data_acc[posXi + posYi * width_ + timeSlice2],
-                      data_acc[(posXi + 1) + posYi * width_ + timeSlice2]),
-                  blend(lpos.x(), data_acc[posXi + (posYi + 1) * width_ + timeSlice2],
-                      data_acc[(posXi + 1) + (posYi + 1) * width_ + timeSlice2]));
-
-
-              interpolatedPrev = vecMid1;
-              interpolatedNext = vecMid2;
-
-              float localTime =
-                  (currentTime - timesteps_acc[prevIndex]) / (timesteps_acc[nextIndex] - timesteps_acc[prevIndex]);
-
-              s::float2 interpolated = blend(localTime, interpolatedPrev, interpolatedNext);
-
-              pos.x() += interpolated.x() * timestep;
-              pos.y() += interpolated.y() * timestep;
+              output_acc[gid] = pos;
             }
-            output_acc[gid] = pos;
           });
     }));
   }

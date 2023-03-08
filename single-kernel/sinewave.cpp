@@ -13,7 +13,9 @@ class Sinewave {
 protected:
   size_t size; // user-defined size (input and output will be size x size)
   size_t local_size;
-   BenchmarkArgs& args;
+  size_t num_iters;
+
+  BenchmarkArgs& args;
 
   std::vector<s::float4> output;
 
@@ -27,6 +29,8 @@ public:
   void setup() {
     size = args.problem_size;     // input size defined by the user
     local_size = args.local_size; // set local work_group size
+    num_iters = args.num_iterations;
+
     output.resize(size);
 
     buf_output.initialize(args.device_queue, output.data(), s::range<1>(size));
@@ -44,25 +48,27 @@ public:
         if(gid >= num_elements)
           return;
 
-        float time = 5.0f;
-        float u = gid * 2.0f - 1.0f;
-        float v = gid * 3.0f - 2.0f;
-        float w = gid * 4.0f - 3.0f;
-        float z = gid * 5.0f - 4.0f;
-        float freq = 4.0f;
-        for(int i = 0; i < 50; ++i) {
-          u = s::sin(u * freq + time) * s::cos(v * freq + time) * 0.5f +
-              s::sin(w * freq + time) * s::cos(z * freq + time) * 0.5f;
-          v = s::sin(u * freq + time) * s::cos(v * freq + time) * 0.5f +
-              s::sin(w * freq + time) * s::cos(z * freq + time) * 0.5f;
-          w = s::sin(u * freq + time) * s::cos(v * freq + time) * 0.5f +
-              s::sin(w * freq + time) * s::cos(z * freq + time) * 0.5f;
-          z = s::sin(u * freq + time) * s::cos(v * freq + time) * 0.5f +
-              s::sin(w * freq + time) * s::cos(z * freq + time) * 0.5f;
-        }
+        for(size_t i = 0; i < num_iters; i++) {
+          float time = 5.0f;
+          float u = gid * 2.0f - 1.0f;
+          float v = gid * 3.0f - 2.0f;
+          float w = gid * 4.0f - 3.0f;
+          float z = gid * 5.0f - 4.0f;
+          float freq = 4.0f;
+          for(int i = 0; i < 50; ++i) {
+            u = s::sin(u * freq + time) * s::cos(v * freq + time) * 0.5f +
+                s::sin(w * freq + time) * s::cos(z * freq + time) * 0.5f;
+            v = s::sin(u * freq + time) * s::cos(v * freq + time) * 0.5f +
+                s::sin(w * freq + time) * s::cos(z * freq + time) * 0.5f;
+            w = s::sin(u * freq + time) * s::cos(v * freq + time) * 0.5f +
+                s::sin(w * freq + time) * s::cos(z * freq + time) * 0.5f;
+            z = s::sin(u * freq + time) * s::cos(v * freq + time) * 0.5f +
+                s::sin(w * freq + time) * s::cos(z * freq + time) * 0.5f;
+          }
 
-        s::float4 out{u, v, w, z};
-        output_acc[gid] = out;
+          s::float4 out{u, v, w, z};
+          output_acc[gid] = out;
+        }
       });
     }));
   }

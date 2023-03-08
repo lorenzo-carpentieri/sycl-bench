@@ -138,8 +138,8 @@ struct BenchmarkArgs {
 #ifdef __ENABLED_SYNERGY
   synergy::frequency core_freq;
   synergy::frequency memory_freq;
-  size_t num_iterations;
 #endif
+  size_t num_iterations;
   size_t local_size;
   size_t num_runs;
   selected_queue device_queue;
@@ -171,10 +171,9 @@ public:
 #ifdef __ENABLED_SYNERGY
     synergy::frequency core_freq = cli_parser.getOrDefault<synergy::frequency>("--core-freq", 0);
     synergy::frequency memory_freq = cli_parser.getOrDefault<synergy::frequency>("--memory-freq", 0);
-    std::size_t num_iterations = cli_parser.getOrDefault<std::size_t>("--num-iters", 0);
 #endif
 
-
+    std::size_t num_iterations = cli_parser.getOrDefault<std::size_t>("--num-iters", 1);
     std::string device_type = cli_parser.getOrDefault<std::string>("--device", "default");
 
     selected_queue q = getQueue(device_type);

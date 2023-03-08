@@ -66,7 +66,7 @@ public:
           rc = in_acc[gid];
           rd = in_acc[size - gid];
 
-          for(int i = 0; i < num_iters; i++) {
+          for(size_t i = 0; i < num_iters; i++) {
 
 #pragma unroll
             for(int i = 0; i < AddPerc; i++) {

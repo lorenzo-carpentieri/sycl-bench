@@ -5,37 +5,41 @@
 #define FLT_MAX 500000.0
 #endif
 
-//using namespace sycl;
+// using namespace sycl;
 namespace s = sycl;
-template <typename T> class KmeansKernel;
+template <typename T>
+class KmeansKernel;
 
 template <typename T>
-class KmeansBench
-{
-protected:    
-    std::vector<T> features;
-    std::vector<T> clusters;
-    std::vector<int> membership;
-    int nfeatures;
-	  int nclusters;
-    int feature_size;
-    int cluster_size;
-     BenchmarkArgs& args;
+class KmeansBench {
+protected:
+  size_t num_iters;
+  std::vector<T> features;
+  std::vector<T> clusters;
+  std::vector<int> membership;
+  int nfeatures;
+  int nclusters;
+  int feature_size;
+  int cluster_size;
+  BenchmarkArgs& args;
 
 
-    PrefetchedBuffer<T, 1> features_buf;
-    PrefetchedBuffer<T, 1> clusters_buf;
-    PrefetchedBuffer<int, 1> membership_buf;
+  PrefetchedBuffer<T, 1> features_buf;
+  PrefetchedBuffer<T, 1> clusters_buf;
+  PrefetchedBuffer<int, 1> membership_buf;
+
 public:
   KmeansBench(BenchmarkArgs& _args) : args(_args) {}
-  
-  void setup() {      
+
+  void setup() {
+    num_iters = args.problem_size;
+
     // host memory allocation and initialization
     nfeatures = 2;
     nclusters = 3;
 
-    feature_size = nfeatures*args.problem_size;
-    cluster_size = nclusters*args.problem_size;
+    feature_size = nfeatures * args.problem_size;
+    cluster_size = nclusters * args.problem_size;
 
     features.resize(feature_size, 2.0f);
     clusters.resize(cluster_size, 1.0f);
@@ -54,34 +58,34 @@ public:
 
       sycl::range<1> ndrange(args.problem_size);
 
-      cgh.parallel_for<class KmeansKernel<T>>(ndrange,
-        [features, clusters, membership, problem_size = args.problem_size,
-         nclusters_ = nclusters, nfeatures_ = nfeatures]
-        (sycl::id<1> idx){
+      cgh.parallel_for<class KmeansKernel<T>>(
+          ndrange, [features, clusters, membership, problem_size = args.problem_size, nclusters_ = nclusters,
+                       nfeatures_ = nfeatures, num_iters = num_iters](sycl::id<1> idx) {
+            size_t gid = idx[0];
 
-        size_t gid = idx[0];
-
-        if(gid < problem_size) {
-          int index = 0;
-          T min_dist = FLT_MAX;
-          for(size_t i = 0; i < nclusters_; i++) {
-            T dist = 0;
-            for(size_t l = 0; l < nfeatures_; l++) {
-              dist += (features[l * problem_size + gid] - clusters[i * nfeatures_ + l]) *
-                      (features[l * problem_size + gid] - clusters[i * nfeatures_ + l]);
+            if(gid < problem_size) {
+              for(size_t i = 0; i < num_iters; i++) {
+                int index = 0;
+                T min_dist = FLT_MAX;
+                for(size_t i = 0; i < nclusters_; i++) {
+                  T dist = 0;
+                  for(size_t l = 0; l < nfeatures_; l++) {
+                    dist += (features[l * problem_size + gid] - clusters[i * nfeatures_ + l]) *
+                            (features[l * problem_size + gid] - clusters[i * nfeatures_ + l]);
+                  }
+                  if(dist < min_dist) {
+                    min_dist = dist;
+                    index = gid;
+                  }
+                }
+                membership[gid] = index;
+              }
             }
-            if(dist < min_dist) {
-              min_dist = dist;
-              index = gid;
-            }
-          }
-          membership[gid] = index;
-        }
-      });
+          });
     }));
   }
 
-  bool verify(VerificationSetting &ver) {
+  bool verify(VerificationSetting& ver) {
     auto membership_acc = membership_buf.get_host_access();
 
     bool pass = true;
@@ -118,14 +122,13 @@ public:
     std::stringstream name;
     name << "Kmeans_";
     name << ReadableTypename<T>::name;
-    return name.str();     
+    return name.str();
   }
 };
 
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
   BenchmarkApp app(argc, argv);
-  app.run<KmeansBench<float>> ();
-  app.run<KmeansBench<double>> ();   
+  app.run<KmeansBench<float>>();
+  app.run<KmeansBench<double>>();
   return 0;
 }

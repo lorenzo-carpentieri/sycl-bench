@@ -28,8 +28,6 @@ set(SYCL_IMPL "" CACHE STRING "Select SYCL implementation [hipSYCL | LLVM | LLVM
 option(ENABLED_SYNERGY "Enable SYnergy support" OFF)
 option(ENABLED_TIME_EVENT_PROFILING "Enable time profiling with sycl event" OFF)
 
-
-
 set(supported_implementations
   hipSYCL
   LLVM
@@ -49,21 +47,22 @@ elseif(SYCL_IMPL STREQUAL "LLVM")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsycl")
 elseif(SYCL_IMPL STREQUAL "LLVM-CUDA")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsycl -fsycl-targets=nvptx64-nvidia-cuda")
-  set(SYCL_BENCH_CUDA_ARCH "" CACHE STRING "CUDA architecture in format \"sm_xy\"") 
+  set(SYCL_BENCH_CUDA_ARCH "" CACHE STRING "CUDA architecture in format \"sm_xy\"")
+
   if(NOT SYCL_BENCH_CUDA_ARCH STREQUAL "")
-      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Xsycl-target-backend --cuda-gpu-arch=${SYCL_BENCH_CUDA_ARCH}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Xsycl-target-backend --cuda-gpu-arch=${SYCL_BENCH_CUDA_ARCH}")
   endif()
 endif()
 
 set(benchmarks
+
   # micro/arith.cpp
   # micro/DRAM.cpp
   # micro/host_device_bandwidth.cpp
   # micro/pattern_L2.cpp
   # micro/sf.cpp
   # micro/local_mem.cpp
-
-  micro-bench-energy/ArithLocalMixed.cpp  
+  micro-bench-energy/ArithLocalMixed.cpp
   micro-bench-energy/ArithMixedUnitOp.cpp
   micro-bench-energy/ArithMixedUnitType.cpp
   micro-bench-energy/ArithSingleUnit.cpp
@@ -72,28 +71,26 @@ set(benchmarks
   micro-bench-energy/L2Unit.cpp
   micro-bench-energy/LocalMemory.cpp
 
-
-  # single-kernel/median.cpp
-  # single-kernel/sobel.cpp
-  # single-kernel/sobel5.cpp
-  # single-kernel/sobel7.cpp
-  # single-kernel/vec_add.cpp
-  # single-kernel/lin_reg_error.cpp
-  # single-kernel/lin_reg_coeff.cpp
-  # single-kernel/kmeans.cpp
-  # single-kernel/mol_dyn.cpp
-  # single-kernel/nbody.cpp
-  # single-kernel/black_scholes.cpp
-  # single-kernel/bit_compression.cpp
-  # single-kernel/aes_encrypt.cpp
-  # single-kernel/geometric_mean.cpp
-  # single-kernel/flowmap.cpp
-  # single-kernel/ftle.cpp
-  # single-kernel/knn.cpp
-  # single-kernel/merse_twister.cpp
-  # single-kernel/spmv.cpp
-  # single-kernel/sinewave.cpp
-  # single-kernel/perlin.cpp
+  single-kernel/median.cpp
+  single-kernel/sobel.cpp
+  single-kernel/sobel5.cpp
+  single-kernel/sobel7.cpp
+  single-kernel/vec_add.cpp
+  single-kernel/lin_reg_error.cpp
+  single-kernel/lin_reg_coeff.cpp
+  single-kernel/kmeans.cpp
+  single-kernel/mol_dyn.cpp
+  single-kernel/black_scholes.cpp
+  single-kernel/bit_compression.cpp
+  single-kernel/aes_encrypt.cpp
+  single-kernel/geometric_mean.cpp
+  single-kernel/flowmap.cpp
+  single-kernel/ftle.cpp
+  single-kernel/knn.cpp
+  single-kernel/merse_twister.cpp
+  single-kernel/spmv.cpp
+  single-kernel/sinewave.cpp
+  single-kernel/perlin.cpp
 
   # pattern/segmentedreduction.cpp
   # pattern/reduction.cpp
@@ -122,12 +119,14 @@ set(benchmarks
   # runtime/dag_task_throughput_sequential.cpp
   # runtime/dag_task_throughput_independent.cpp
   # single-kernel/scalar_prod.cpp
+  # single-kernel/nbody.cpp
 )
 
 foreach(benchmark IN LISTS benchmarks)
   get_filename_component(target ${benchmark} NAME_WE)
-  
+
   add_executable(${target} ${benchmark})
+
   if(ENABLED_SYNERGY)
     target_compile_definitions(${target} PUBLIC __ENABLED_SYNERGY)
     target_link_libraries(${target} PUBLIC synergy)
@@ -149,7 +148,6 @@ foreach(benchmark IN LISTS benchmarks)
     target_compile_definitions(${target} PRIVATE __LLVM_SYCL_CUDA__)
   endif()
 
-
   install(TARGETS ${target} RUNTIME DESTINATION bin/benchmarks/)
   get_filename_component(dir ${benchmark} DIRECTORY)
   set_property(TARGET ${target} PROPERTY FOLDER ${dir})
@@ -157,11 +155,9 @@ endforeach(benchmark)
 
 # The "compiletime" target should only be used in the context of the compile time evaluation script
 # set_target_properties(compiletime PROPERTIES EXCLUDE_FROM_ALL 1)
-
 if(ENABLED_SYNERGY)
   add_subdirectory(SYnergy)
 endif()
-
 
 # add_subdirectory(micro-bench-energy)
 install(PROGRAMS bin/run-suite DESTINATION bin/)
