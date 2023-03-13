@@ -195,7 +195,7 @@ public:
     return BenchmarkArgs{size, core_freq, memory_freq, num_iterations, local_size, num_runs, q,
         VerificationSetting{verification_enabled, verification_begin, verification_range}, cli_parser, result_consumer};
 #else
-    return BenchmarkArgs{size, local_size, num_runs, q,
+    return BenchmarkArgs{size, num_iterations, local_size, num_runs, q,
         VerificationSetting{verification_enabled, verification_begin, verification_range}, cli_parser, result_consumer};
 #endif
   }
@@ -218,8 +218,6 @@ private:
     }
 
     return selected_queue(CUDASelector, queueProperties);
-
-
 #endif
 #ifndef __ENABLED_SYNERGY
     if(device_type == "cpu") {
