@@ -9,6 +9,8 @@ if len(sys.argv) != 3:
 work_dir=sys.argv[1]
 out_dir=sys.argv[2]
 
+if not os.path.exists(out_dir):
+    os.makedirs(out_dir)
 
 for file in os.listdir(work_dir):
     out_file = file.replace(".log","")

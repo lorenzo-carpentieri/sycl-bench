@@ -15,6 +15,12 @@ kernel_dir = sys.argv[1]
 edp_output_dir = sys.argv[2]
 ed2p_output_dir = sys.argv[3]
 
+if not os.path.exists(edp_output_dir):
+    os.makedirs(edp_output_dir)
+    
+if not os.path.exists(ed2p_output_dir):
+    os.makedirs(ed2p_output_dir)
+
 default_core_freq = 1312
 default_memory_freq = 877
 pd.set_option('display.width', 1000)

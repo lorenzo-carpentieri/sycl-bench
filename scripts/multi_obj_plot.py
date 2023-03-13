@@ -38,7 +38,11 @@ if len(sys.argv) != 3:
     exit(0)
 
 kernel_dir = sys.argv[1]
-outpu_dir = sys.argv[2]
+output_dir = sys.argv[2]
+
+if not os.path.exists(output_dir):
+    os.makedirs(output_dir)
+
 
 default_core_freq = 1312
 default_memory_freq = 877
@@ -86,7 +90,7 @@ for file in os.listdir(kernel_dir):
         color_bar.set_label("Core Frequency")
         plt.legend()
        
-        plt.savefig(outpu_dir+"/"+kernel_name+".pdf")
+        plt.savefig(output_dir+"/"+kernel_name+".pdf")
         
         
 

@@ -14,6 +14,8 @@ sycl_bench_csv_dir=sys.argv[1]
 features_csv_dir=sys.argv[2]
 merged_csv_dir=sys.argv[3]
 
+if not os.path.exists(merged_csv_dir):
+    os.makedirs(merged_csv_dir)
 
 sycl_bench_files={}
 features_files={}
