@@ -1,7 +1,6 @@
 #include <iostream>
 #include <sycl/sycl.hpp>
 
-#include "bitmap.h"
 #include "common.h"
 
 

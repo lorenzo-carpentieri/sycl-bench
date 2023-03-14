@@ -55,7 +55,6 @@ elseif(SYCL_IMPL STREQUAL "LLVM-CUDA")
 endif()
 
 set(benchmarks
-  usm/matrix_mul.cpp
   # micro/arith.cpp
   # micro/DRAM.cpp
   # micro/host_device_bandwidth.cpp
@@ -91,10 +90,13 @@ set(benchmarks
   single-kernel/spmv.cpp
   single-kernel/sinewave.cpp
   single-kernel/perlin.cpp
+  single-kernel/matrix_mul.cpp
 
+
+
+  usm/matrix_mul_usm.cpp
   # pattern/segmentedreduction.cpp
   # pattern/reduction.cpp
-
   # runtime/blocked_transform.cpp
   # runtime/matmulchain.cpp
 
