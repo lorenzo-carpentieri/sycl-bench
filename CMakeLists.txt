@@ -69,6 +69,9 @@ set(benchmarks
   micro-bench-energy/GlobalMemory2.cpp
   micro-bench-energy/L2Unit.cpp
   micro-bench-energy/LocalMemory.cpp
+  micro-bench-energy/stencil.cpp
+
+
 
   single-kernel/median.cpp
   single-kernel/sobel.cpp
@@ -95,26 +98,26 @@ set(benchmarks
 
 
   usm/matrix_mul_usm.cpp
-  # pattern/segmentedreduction.cpp
-  # pattern/reduction.cpp
-  # runtime/blocked_transform.cpp
-  # runtime/matmulchain.cpp
+  pattern/segmentedreduction.cpp
+  pattern/reduction.cpp
+  runtime/blocked_transform.cpp
+  runtime/matmulchain.cpp
 
-  # polybench/2DConvolution.cpp
-  # polybench/2mm.cpp
-  # polybench/3DConvolution.cpp
-  # polybench/3mm.cpp
-  # polybench/atax.cpp
-  # polybench/bicg.cpp
-  # polybench/correlation.cpp
-  # polybench/covariance.cpp
-  # polybench/fdtd2d.cpp
-  # polybench/gemm.cpp
-  # polybench/gesummv.cpp
-  # polybench/gramschmidt.cpp
-  # polybench/mvt.cpp
-  # polybench/syr2k.cpp
-  # polybench/syrk.cpp
+  polybench/2DConvolution.cpp
+  polybench/2mm.cpp
+  polybench/3DConvolution.cpp
+  polybench/3mm.cpp
+  polybench/atax.cpp
+  polybench/bicg.cpp
+  polybench/correlation.cpp
+  polybench/covariance.cpp
+  polybench/fdtd2d.cpp
+  polybench/gemm.cpp
+  polybench/gesummv.cpp
+  polybench/gramschmidt.cpp
+  polybench/mvt.cpp
+  polybench/syr2k.cpp
+  polybench/syrk.cpp
 
   # Not working
   # compiletime/compiletime.cpp
