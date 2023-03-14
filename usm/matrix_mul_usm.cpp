@@ -91,12 +91,13 @@ public:
     args.device_queue.memcpy(dev_c, &c[0], (size*size)*sizeof(T)); 
     
     args.device_queue.wait();
-
+    
     events.push_back(
-        args.device_queue.parallel_for(s::range<2>{size, size}, matrixMul<T>(size, dev_a, dev_b, dev_c))//end parallel for
+        args.device_queue.submit([&](s::handler &cgh){
+            cgh.parallel_for(s::range<2>{size, size}, matrixMul<T>(size, dev_a, dev_b, dev_c));//end parallel for
+        })
     );// end events.push back
-    
-    
+        
     args.device_queue.wait();
     args.device_queue.memcpy(&c[0], dev_c, (size*size)*sizeof(T));
     args.device_queue.wait();
