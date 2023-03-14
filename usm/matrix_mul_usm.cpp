@@ -11,6 +11,7 @@ class MatrixMulKernel; // kernel forward declaration
 template<class T>
 class matrixMul{
     private:
+        int num_iters;
         int size;
         const T* in_A;
         const T* in_B;
@@ -18,11 +19,13 @@ class matrixMul{
 
     public: 
         matrixMul(
+            int num_iters,
             int size, 
             const T* in_A,
             const T* in_B,
             T* out   
         ):
+        num_iters(num_iters),
         size(size),
         in_A(in_A),
         in_B(in_B), 
@@ -32,8 +35,10 @@ class matrixMul{
         void operator()(s::id<2> gid)const {
             int gidx = gid.get(0);
             int gidy = gid.get(1);
-            for(int k = 0; k < size; k++)
-                out[gidx*size+gidy] += in_A[gidx*size+k] * in_B[k*size+gidy];
+            for(size_t i = 0; i < num_iters; i++) {
+              for(int k = 0; k < size; k++)
+                  out[gidx*size+gidy] += in_A[gidx*size+k] * in_B[k*size+gidy];
+            }
         }
 };
 
@@ -94,7 +99,7 @@ public:
     
     events.push_back(
         args.device_queue.submit([&](s::handler &cgh){
-            cgh.parallel_for(s::range<2>{size, size}, matrixMul<T>(size, dev_a, dev_b, dev_c));//end parallel for
+            cgh.parallel_for(s::range<2>{size, size}, matrixMul<T>(num_iters, size, dev_a, dev_b, dev_c));//end parallel for
         })
     );// end events.push back
         
@@ -110,7 +115,7 @@ public:
 
   bool verify(VerificationSetting& ver) {
     for(int i = 0; i < size*size; i++)
-      if(size != c[i])
+      if(num_iters*size != c[i])
         return false;
           
     
