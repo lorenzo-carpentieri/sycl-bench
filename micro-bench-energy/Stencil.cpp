@@ -32,6 +32,7 @@ public:
 
     for(size_t i = 0; i < size * size; i++) {
       a[i] = (float)(i % 1) + 1;
+      b[i] = (float)(i % 1) + 1;
     }
 
     a_buf.initialize(args.device_queue, a.data(), sycl::range<2>{size, size});
@@ -53,8 +54,6 @@ public:
       h.parallel_for(grid, [=, _size = size, compute_iters = iters](sycl::id<2> id) {
         int gidx = id.get(0);
         int gidy = id.get(1);
-
-        ValueType r0;
 
         for(int j = 0; j < compute_iters; j++) {
 #pragma unroll
