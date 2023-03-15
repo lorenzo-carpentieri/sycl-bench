@@ -3,7 +3,7 @@
 
 using namespace sycl;
 
-template <typename ValueType, int radius = 1>
+template <typename ValueType, int radius, size_t AddPerc, size_t MulPerc, size_t DivPerc, size_t SpecPerc>
 class Stencil {
 protected:
   size_t size;
@@ -31,8 +31,8 @@ public:
     c1.resize(size * size);
 
     for(size_t i = 0; i < size * size; i++) {
-      a[i] = (float)(i % 1) + 1;
-      b[i] = (float)(i % 1) + 1;
+      a[i] = (ValueType)(i % 1) + 1;
+      b[i] = (ValueType)(i % 1) + 1;
     }
 
     a_buf.initialize(args.device_queue, a.data(), sycl::range<2>{size, size});
@@ -56,12 +56,22 @@ public:
         int gidy = id.get(1);
 
         for(int j = 0; j < compute_iters; j++) {
-#pragma unroll
           for(int x = -radius; x < radius + 1; x++)
-#pragma unroll
             for(int y = -radius; y < radius + 1; y++)
-              if(gidx + x > -1 && gidx + x < _size && gidy + y > -1 && gidy + y < _size)
-                c1_acc[gidx][gidy] += a_acc[gidx + x][gidy + y] + b_acc[gidx + x][gidy + y];
+              if(gidx + x > -1 && gidx + x < _size && gidy + y > -1 && gidy + y < _size) {
+
+#pragma unroll
+                for(int i = 0; i < AddPerc; i++)
+                  c1_acc[gidx][gidy] += a_acc[gidx + x][gidy + y] + b_acc[gidx + x][gidy + y];
+#pragma unroll
+                for(int i = 0; i < MulPerc; i++) c1_acc[gidx][gidy] *= a_acc[gidx + x][gidy + y];
+
+#pragma unroll
+                for(int i = 0; i < DivPerc; i++) c1_acc[gidx][gidy] /= b_acc[gidx + x][gidy + y];
+
+#pragma unroll
+                for(int i = 0; i < SpecPerc; i++) c1_acc[gidx][gidy] = log(c1_acc[gidx][gidy]);
+              }
         }
       }); // end parallel for
     });   // end submit
@@ -72,7 +82,18 @@ public:
 
   static std::string getBenchmarkName() {
     std::string name = "Stencil_";
-    name.append(std::to_string(radius));
+    name.append(std::is_same_v<ValueType, int> ? "int" : "float")
+        .append("_")
+        .append(std::to_string(radius))
+        .append("_")
+        .append(std::to_string(AddPerc))
+        .append("_")
+        .append(std::to_string(MulPerc))
+        .append("_")
+        .append(std::to_string(DivPerc))
+        .append("_")
+        .append(std::to_string(SpecPerc));
+
     return name;
   }
 
@@ -82,7 +103,24 @@ public:
 // 1048576 1000000
 int main(int argc, char** argv) {
   BenchmarkApp app(argc, argv);
-  app.run<Stencil<float>>();
-  app.run<Stencil<float, 2>>();
-  app.run<Stencil<float, 3>>();
+
+  app.run<Stencil<float, 2, 1, 1, 1, 0>>();
+  app.run<Stencil<float, 3, 1, 1, 1, 0>>();
+  app.run<Stencil<float, 4, 1, 1, 1, 0>>();
+  app.run<Stencil<float, 5, 0, 1, 1, 0>>();
+
+  app.run<Stencil<int, 2, 1, 1, 1, 0>>();
+  app.run<Stencil<int, 3, 1, 1, 1, 0>>();
+  app.run<Stencil<int, 4, 1, 1, 1, 0>>();
+  app.run<Stencil<int, 5, 0, 1, 1, 0>>();
+
+  app.run<Stencil<float, 2, 1, 1, 1, 1>>();
+  app.run<Stencil<float, 3, 1, 1, 1, 1>>();
+  app.run<Stencil<float, 4, 1, 1, 1, 1>>();
+  app.run<Stencil<float, 5, 1, 0, 0, 1>>();
+
+  app.run<Stencil<int, 2, 1, 1, 1, 1>>();
+  app.run<Stencil<int, 3, 1, 1, 1, 1>>();
+  app.run<Stencil<int, 4, 1, 1, 1, 1>>();
+  app.run<Stencil<int, 5, 1, 0, 0, 1>>();
 }
