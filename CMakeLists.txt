@@ -55,6 +55,7 @@ elseif(SYCL_IMPL STREQUAL "LLVM-CUDA")
 endif()
 
 set(benchmarks
+
   # micro/arith.cpp
   # micro/DRAM.cpp
   # micro/host_device_bandwidth.cpp
@@ -69,9 +70,7 @@ set(benchmarks
   micro-bench-energy/GlobalMemory2.cpp
   micro-bench-energy/L2Unit.cpp
   micro-bench-energy/LocalMemory.cpp
-  micro-bench-energy/stencil.cpp
-
-
+  micro-bench-energy/Stencil.cpp
 
   single-kernel/median.cpp
   single-kernel/sobel.cpp
@@ -94,8 +93,6 @@ set(benchmarks
   single-kernel/sinewave.cpp
   single-kernel/perlin.cpp
   single-kernel/matrix_mul.cpp
-
-
 
   usm/matrix_mul_usm.cpp
   pattern/segmentedreduction.cpp
@@ -125,7 +122,6 @@ set(benchmarks
   # runtime/dag_task_throughput_independent.cpp
   # single-kernel/nbody.cpp
   # single-kernel/scalar_prod.cpp
-
 )
 
 foreach(benchmark IN LISTS benchmarks)
