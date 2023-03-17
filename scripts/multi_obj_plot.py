@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import numpy as np
+from paretoset import paretoset
 
 # def is_dominant(p1, p2):
 #     if (p1[0] >= p2[0] and p1[1] < p2[1]) or (p1[0] > p2[0] and p1[1] <= p2[1]):
@@ -90,6 +91,27 @@ for file in os.listdir(kernel_dir):
         color_bar.set_label("Core Frequency")
         plt.legend()
        
+        # Compute the pareto set point and print on the plot
+        # Creaete a data frame with energy and speedup
+        df_speedup_energy = pd.DataFrame({"speedup": pd.to_numeric(kernel_speedup.iloc[:,0]), 
+                       "energy": pd.to_numeric(kernel_norm_energy.iloc[:,0])})
+        mask = paretoset(df_speedup_energy, sense=["max", "min"])
+        pset = df_speedup_energy[mask]
+        pset = pset.sort_values(by=['speedup'])
+        
+        np_array = pset.to_numpy()
+        pset_size = len(pset["speedup"])
+        for i in range(pset_size):
+            if not (i == pset_size-1):
+                current_x = np_array[i][0]
+                current_y = np_array[i][1]
+                next_x = np_array[i+1][0]
+                next_y = np_array[i+1][1]
+                x1, y1 = [current_x, current_x], [current_y, next_y]
+                x2, y2 = [current_x, next_x], [next_y, next_y]
+                plt.plot(x1, y1, x2, y2, color="red")
+        
+        
         plt.savefig(output_dir+"/"+kernel_name+".pdf")
         
         
