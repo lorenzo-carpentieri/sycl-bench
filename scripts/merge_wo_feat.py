@@ -1,10 +1,8 @@
 #!/usr/bin/python3
+
 import os
 import sys
 import pandas as pd
-import csv
-import numpy as np
-
 
 if len(sys.argv) != 3:
     print("Insert path to sycl-bench folder as command line argument")

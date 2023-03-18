@@ -1,9 +1,9 @@
+#!/usr/bin/python3
+
 import sys
 import os
 import matplotlib.pyplot as plt
 import pandas as pd
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-import numpy as np
 
 pd.set_option('display.max_columns', None)
 pd.set_option('display.max_rows', None)

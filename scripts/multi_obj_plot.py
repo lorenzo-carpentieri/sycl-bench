@@ -1,36 +1,11 @@
+#!/usr/bin/python3
+
 import sys
 import os
 import matplotlib.pyplot as plt
 import pandas as pd
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-import numpy as np
 from paretoset import paretoset
-
-# def is_dominant(p1, p2):
-#     if (p1[0] >= p2[0] and p1[1] < p2[1]) or (p1[0] > p2[0] and p1[1] <= p2[1]):
-#       return True
-#     else:
-#       return False
-    
-# def pareto_set(x, y):
-#     points = list(zip(x, y))
-#     pset = []
-#     dominated = []
-#     while len(points)>0:
-#       candidate = points[0]
-#       print(candidate)
-#       for point in points:
-#         if is_dominant(candidate, point):
-#             points.pop(0)
-#             dominated.append(candidate)
-      
-#         if is_dominant(point, candidate):
-#            dominated.append(point)
-#         else:
-#             pset.append(candidate)
-#     return pset 
-
-
 
 pd.set_option('display.max_columns', None)
 pd.set_option('display.max_rows', None)
