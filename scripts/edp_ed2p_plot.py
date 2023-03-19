@@ -21,6 +21,11 @@ if not os.path.exists(edp_output_dir):
 if not os.path.exists(ed2p_output_dir):
     os.makedirs(ed2p_output_dir)
 
+ticks_size=11
+axis_label_size=13
+scatter_size=15
+legend_size=11
+
 default_core_freq = 1312
 default_memory_freq = 877
 pd.set_option('display.width', 1000)
@@ -37,6 +42,7 @@ for file in os.listdir(kernel_dir):
         
         filtered_df = df[df["core-freq"] > 800]
         base_line_row = df[(df["core-freq"] == default_core_freq) & (df["memory-freq"] == default_memory_freq) & (df["kernel-name"]== kernel_name)]
+
         kernel_data = filtered_df[filtered_df["kernel-name"] == kernel_name]
         kernel_times = kernel_data['kernel-time [s]']
         kernel_core_freq = kernel_data['core-freq']
@@ -47,29 +53,31 @@ for file in os.listdir(kernel_dir):
 
         # Clear the plot to avoid that data of the previous itereation are rewritten in the plot
         plt.clf()
-              
-        plt.xlabel("Core Frequency")
-        plt.ylabel("EDP")
         plt.grid(zorder=0)
-        sc = plt.scatter(kernel_core_freq.values, kernel_edp.values, s=10, zorder=2)        
+        plt.xticks(size=ticks_size)
+        plt.yticks(size=ticks_size)
+
+        plt.xlabel("Core Frequency", size=axis_label_size)
+        plt.ylabel("EDP", size=axis_label_size)
+        sc = plt.scatter(kernel_core_freq.values, kernel_edp.values, s=scatter_size, zorder=2)        
         if default_core_freq == 1312:
-            plt.scatter(1312, base_line_row['max-edp'].values, marker='x', color='black', s=10, zorder=2, label="default configuration")
-        plt.legend()
-        # plt.xlim(left=800)
-        # plt.ylim(bottom=min(edp_gt800), top=max(edp_gt800))
-        plt.savefig(edp_output_dir+"/"+kernel_name+"_edp.pdf")
+            plt.scatter(1312, base_line_row['max-edp'].values, marker='x', color='black', s=scatter_size, zorder=4, label="default configuration")
+        plt.legend(fontsize=legend_size)
+        plt.savefig(edp_output_dir+"/"+kernel_name+"_edp.pdf", bbox_inches='tight')
         
         # print ed2p plot
         plt.clf()
-              
-        plt.xlabel("Core Frequency")
-        plt.ylabel("ED2P")
         plt.grid(zorder=0)
-        sc = plt.scatter(kernel_core_freq.values, kernel_ed2p.values, s=10, zorder=2)        
+        plt.xticks(size=ticks_size)
+        plt.yticks(size=ticks_size)
+
+        plt.xlabel("Core Frequency", size=axis_label_size)
+        plt.ylabel("ED2P", size=axis_label_size)
+        sc = plt.scatter(kernel_core_freq.values, kernel_ed2p.values, s=scatter_size, zorder=2)        
         if default_core_freq == 1312:
-            plt.scatter(1312, base_line_row['max-ed2p'].values, marker='x', color='black', s=10, zorder=2, label="default configuration")
-        plt.legend()
-        plt.savefig(ed2p_output_dir+"/"+kernel_name+"_ed2p.pdf")
+            plt.scatter(1312, base_line_row['max-ed2p'].values, marker='x', color='black', s=scatter_size, zorder=4, label="default configuration")
+        plt.legend(fontsize=legend_size)
+        plt.savefig(ed2p_output_dir+"/"+kernel_name+"_ed2p.pdf", bbox_inches='tight')
         i+=+1
         
         
