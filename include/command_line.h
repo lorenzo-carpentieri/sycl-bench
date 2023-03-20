@@ -205,6 +205,9 @@ private:
   selected_queue getQueue(const std::string& device_type) const {
     const auto getQueueProperties = [&]() -> sycl::property_list {
 #if defined(SYCL_BENCH_ENABLE_QUEUE_PROFILING)
+#ifdef __ENABLED_SYNERGY
+      return {sycl::property::queue::enable_profiling{}, sycl::property::queue::in_order{}};
+#endif
       return sycl::property::queue::enable_profiling{};
 #endif
       return {};
@@ -222,7 +225,7 @@ private:
     }
 #else
     if(device_type == "gpu") {
-      return selected_queue{getQueueProperties()};
+      return selected_queue{sycl::gpu_selector_v, getQueueProperties()};
     } else if(device_type == "default") {
       return selected_queue{getQueueProperties()};
     } else {
