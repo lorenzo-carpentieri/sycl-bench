@@ -100,6 +100,7 @@ set(benchmarks
   micro-bench-energy/LocalMemory.cpp
   micro-bench-energy/Stencil.cpp
 
+  single-kernel/scalar_prod.cpp
   single-kernel/median.cpp
   single-kernel/sobel.cpp
   single-kernel/sobel5.cpp

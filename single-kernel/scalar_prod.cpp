@@ -46,9 +46,9 @@ public:
       output[i] = static_cast<T>(0);
     }
 
-    input1_buf.initialize(args.device_queue, input1.data(), s::range<1>(size));
-    input2_buf.initialize(args.device_queue, input2.data(), s::range<1>(size));
-    output_buf.initialize(args.device_queue, output.data(), s::range<1>(size));
+    input1_buf.initialize(args.device_queue, input1.data(), s::range<1>(args.problem_size));
+    input2_buf.initialize(args.device_queue, input2.data(), s::range<1>(args.problem_size));
+    output_buf.initialize(args.device_queue, output.data(), s::range<1>(args.problem_size));
   }
 
   void run(std::vector<sycl::event>& events) {
@@ -78,8 +78,8 @@ public:
     }));
 
 
-    auto array_size = size;
-    auto wgroup_size = local_size;
+    auto array_size = args.problem_size;
+    auto wgroup_size = args.local_size;
     // Not yet tested with more than 2
     auto elements_per_thread = 2;
 
