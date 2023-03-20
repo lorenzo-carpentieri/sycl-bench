@@ -148,7 +148,7 @@ set(benchmarks
 )
 
 # Setting variables
-add_compile_definitions(SYCL_BENCH_ENABLE_FP64_BENCHMARKS)
+add_compile_definitions(SYCL_BENCH_ENABLE_FP64_BENCHMARKS=$<BOOL:${SYCL_BENCH_ENABLE_FP64_BENCHMARKS}>)
 
 foreach(benchmark IN LISTS benchmarks)
   get_filename_component(target ${benchmark} NAME_WE)
