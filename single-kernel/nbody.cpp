@@ -22,7 +22,7 @@ protected:
   std::vector<particle_type> particles;
   std::vector<vector_type> velocities;
 
-  BenchmarkArgs& args;
+  BenchmarkArgs args;
 
 
   const float_type gravitational_softening;

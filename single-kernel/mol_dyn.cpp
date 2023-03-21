@@ -16,7 +16,7 @@ protected:
   int lj1;
   float lj2;
   int inum;
-  BenchmarkArgs& args;
+  BenchmarkArgs args;
 
   PrefetchedBuffer<s::float4, 1> input_buf;
   PrefetchedBuffer<int, 1> neighbour_buf;

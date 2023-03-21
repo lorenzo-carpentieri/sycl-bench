@@ -82,7 +82,7 @@ protected:
   PrefetchedBuffer<T, 1> out_buf;
   
   size_t size;
-  BenchmarkArgs& args;
+  BenchmarkArgs args;
 
 public:
   MatrixTranspose(BenchmarkArgs& _args) : args(_args) {}

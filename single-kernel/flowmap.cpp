@@ -25,7 +25,7 @@ protected:
   std::vector<float> timesteps;
   std::vector<s::float2> flowMap;
 
-  BenchmarkArgs& args;
+  BenchmarkArgs args;
 
 
   PrefetchedBuffer<s::float2, 1> buf_data;

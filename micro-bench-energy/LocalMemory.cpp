@@ -9,7 +9,7 @@ class LocalMemory {
 protected:
   size_t size;
   size_t iters;
-  BenchmarkArgs& args;
+  BenchmarkArgs args;
 
 public:
   LocalMemory(BenchmarkArgs& _args) : args(_args) {}

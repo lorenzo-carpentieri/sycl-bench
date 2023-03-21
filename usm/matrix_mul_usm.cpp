@@ -55,7 +55,7 @@ protected:
 
     
   size_t size;
-  BenchmarkArgs& args;
+  BenchmarkArgs args;
 
 public:
   MatrixMulUSM(BenchmarkArgs& _args) : args(_args) {}

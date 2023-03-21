@@ -12,7 +12,7 @@ template <typename DataT, int Iterations = 16>
 class MicroBenchSpecialFunc {
 protected:
   std::vector<DataT> input;
-   BenchmarkArgs& args;
+   BenchmarkArgs args;
 
   PrefetchedBuffer<DataT, 1> input_buf;
   PrefetchedBuffer<DataT, 1> output_buf;

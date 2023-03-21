@@ -12,7 +12,7 @@ template <typename DATA_TYPE, int COMP_ITERS>
 class MicroBenchLocalMemory {
 protected:
   std::vector<DATA_TYPE> input;
-   BenchmarkArgs& args;
+   BenchmarkArgs args;
 
   PrefetchedBuffer<DATA_TYPE, 1> input_buf;
   PrefetchedBuffer<DATA_TYPE, 1> output_buf;

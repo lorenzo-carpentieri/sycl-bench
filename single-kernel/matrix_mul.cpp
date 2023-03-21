@@ -42,7 +42,7 @@ protected:
   PrefetchedBuffer<T, 1> c_buf;
 
   size_t size;
-  BenchmarkArgs& args;
+  BenchmarkArgs args;
 
 public:
   MatrixMulAcc(BenchmarkArgs& _args) : args(_args) {}

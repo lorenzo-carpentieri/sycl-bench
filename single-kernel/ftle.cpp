@@ -24,7 +24,7 @@ protected:
   std::vector<s::float2> output;
 
 
-  BenchmarkArgs& args;
+  BenchmarkArgs args;
 
 
   PrefetchedBuffer<s::float2, 1> buf_output;

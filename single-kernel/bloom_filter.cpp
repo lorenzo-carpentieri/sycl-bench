@@ -120,7 +120,7 @@ class BloomFilterKernel; // kernel forward declaration
  */
 class BloomFilter {
 protected:
-  BenchmarkArgs& args;
+  BenchmarkArgs args;
   size_t bloom_filter_size;
   size_t num_hashes;
   size_t num_bytes_true_file;

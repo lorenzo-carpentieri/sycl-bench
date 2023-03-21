@@ -14,7 +14,7 @@ protected:
   size_t size;
   size_t local_size;
   size_t num_iters;
-  BenchmarkArgs& args;
+  BenchmarkArgs args;
   int nRef;
 
   std::vector<float> ref;

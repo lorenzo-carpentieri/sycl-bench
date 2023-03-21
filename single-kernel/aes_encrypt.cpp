@@ -28,7 +28,7 @@ protected:
   const unsigned int rounds = 10;
   const unsigned int seed = 123;
 
-  BenchmarkArgs& args;
+  BenchmarkArgs args;
 
   PrefetchedBuffer<s::uchar4, 1> buf_input;
   PrefetchedBuffer<s::uchar4, 1> buf_output;
@@ -346,7 +346,7 @@ public:
 
               block0[localIndex] = shiftRows(block0[localIndex], localIndex);
 
-              output_acc[globalIndex] = block0[localIndex] ^ roundKey_acc[(rounds_)*4 + localIndex];
+              output_acc[globalIndex] = block0[localIndex] ^ roundKey_acc[(rounds_) * 4 + localIndex];
             }
           });
     }));

@@ -17,7 +17,7 @@ protected:
   size_t num_iters;
   std::vector<s::uint4> input;
 
-  BenchmarkArgs& args;
+  BenchmarkArgs args;
 
   PrefetchedBuffer<uint, 1> buf_bits;
   PrefetchedBuffer<s::uint4, 1> buf_input;

@@ -19,7 +19,7 @@ protected:
 
   size_t w, h; // size of the input picture
   size_t size; // user-defined size (input and output will be size x size)
-  BenchmarkArgs& args;
+  BenchmarkArgs args;
 
 
   PrefetchedBuffer<sycl::float4, 2> input_buf;

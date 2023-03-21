@@ -98,7 +98,7 @@ protected:
   size_t size; // user-defined size (input and output will be size x size)
   size_t local_size;
   int num_tiles;
-  BenchmarkArgs& args;
+  BenchmarkArgs args;
 
 
   PrefetchedBuffer<sycl::float4, 1> pos_buff;

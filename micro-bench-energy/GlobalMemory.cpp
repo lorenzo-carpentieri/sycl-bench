@@ -10,7 +10,7 @@ protected:
   size_t iters;
   std::vector<ValueType> a;
   std::vector<ValueType> c1;
-  BenchmarkArgs& args;
+  BenchmarkArgs args;
   PrefetchedBuffer<ValueType, 1> a_buf;
   PrefetchedBuffer<ValueType, 1> c1_buf;
 

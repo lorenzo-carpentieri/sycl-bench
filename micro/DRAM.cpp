@@ -27,7 +27,7 @@ s::range<Dims> getBufferSize(size_t problemSize) {
 template <typename DataT, int Dims>
 class MicroBenchDRAM {
 protected:
-   BenchmarkArgs& args;
+   BenchmarkArgs args;
   const s::range<Dims> buffer_size;
   // Since we cannot use explicit memory operations to initialize the input buffer,
   // we have to keep this around, unfortunately.

@@ -16,7 +16,7 @@ protected:
   std::vector<T> input1;
   std::vector<T> input2;
   std::vector<T> output;
-  BenchmarkArgs& args;
+  BenchmarkArgs args;
 
   PrefetchedBuffer<T, 1> input1_buf;
   PrefetchedBuffer<T, 1> input2_buf;

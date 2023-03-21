@@ -14,7 +14,7 @@ protected:
   size_t size; // user-defined size (input and output will be size x size)
   size_t local_size;
   size_t num_iters;
-  BenchmarkArgs& args;
+  BenchmarkArgs args;
 
 
   std::vector<int> row_b;

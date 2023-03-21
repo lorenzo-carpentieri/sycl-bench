@@ -19,7 +19,7 @@ protected:
   std::vector<s::float16> input;
   std::vector<float> output;
 
-  BenchmarkArgs& args;
+  BenchmarkArgs args;
 
 
   PrefetchedBuffer<s::float16, 1> buf_input;

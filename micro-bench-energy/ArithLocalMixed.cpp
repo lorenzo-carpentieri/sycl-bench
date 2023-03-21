@@ -10,7 +10,7 @@ protected:
   size_t local_size = LocalSize;
   size_t num_iters;
 
-  BenchmarkArgs& args;
+  BenchmarkArgs args;
 
   std::vector<float> in_array;
   std::vector<float> out_array1;

@@ -19,7 +19,7 @@ protected:
   size_t size;
   size_t num_iters;
 
-  BenchmarkArgs& args;
+  BenchmarkArgs args;
 
 public:
   ArithMixedUnitOp(BenchmarkArgs& _args) : args(_args) {}

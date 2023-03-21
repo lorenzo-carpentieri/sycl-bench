@@ -19,7 +19,7 @@ protected:
   size_t size;
   size_t num_iters;
 
-  BenchmarkArgs& args;
+  BenchmarkArgs args;
 
 public:
   ArithSingleUnit(BenchmarkArgs& _args) : args(_args) {}

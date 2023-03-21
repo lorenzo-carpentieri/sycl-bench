@@ -13,7 +13,7 @@ protected:
   std::vector<ValueType> b;
   std::vector<ValueType> c1;
 
-  BenchmarkArgs& args;
+  BenchmarkArgs args;
 
   PrefetchedBuffer<ValueType, 2> a_buf;
   PrefetchedBuffer<ValueType, 2> b_buf;
