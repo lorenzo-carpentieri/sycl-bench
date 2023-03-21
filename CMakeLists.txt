@@ -99,7 +99,10 @@ set(benchmarks
   micro-bench-energy/L2Unit.cpp
   micro-bench-energy/LocalMemory.cpp
   micro-bench-energy/Stencil.cpp
-
+  
+  single-kernel/nbody_local_mem.cpp
+  single-kernel/matrix_transpose_local_mem.cpp
+  single-kernel/box_blur.cpp
   single-kernel/scalar_prod.cpp
   single-kernel/median.cpp
   single-kernel/sobel.cpp
@@ -121,6 +124,7 @@ set(benchmarks
   single-kernel/sinewave.cpp
   single-kernel/perlin.cpp
   single-kernel/matrix_mul.cpp
+  query-frequencies/query_freq.cpp
 
   usm/matrix_mul_usm.cpp
   pattern/segmentedreduction.cpp
