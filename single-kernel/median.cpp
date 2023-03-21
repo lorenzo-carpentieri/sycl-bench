@@ -24,24 +24,21 @@ void swap(sycl::float4 A[], int i, int j) {
  */
 class MedianFilterBench {
 protected:
-  size_t num_iters;
   std::vector<sycl::float4> input;
   std::vector<sycl::float4> output;
 
   size_t w, h; // size of the input picture
   size_t size; // user-defined size (input and output will be size x size)
-  BenchmarkArgs& args;
+  BenchmarkArgs args;
 
   PrefetchedBuffer<sycl::float4, 2> input_buf;
   PrefetchedBuffer<sycl::float4, 2> output_buf;
 
 public:
-  MedianFilterBench(BenchmarkArgs& _args) : args(_args) {}
+  MedianFilterBench(const BenchmarkArgs& _args) : args(_args) {}
 
   void setup() {
     size = args.problem_size; // input size defined by the user
-    num_iters = args.num_iterations;
-
     input.resize(size * size);
     load_bitmap_mirrored("../../share/Brommy.bmp", size, input);
     output.resize(size * size);
@@ -56,70 +53,66 @@ public:
       auto out = output_buf.get_access<s::access::mode::discard_write>(cgh);
       sycl::range<2> ndrange{size, size};
 
-      cgh.parallel_for<class MedianFilterBenchKernel>(
-          ndrange, [in, out, size_ = size, num_iters = num_iters](sycl::id<2> gid) {
-            int x = gid[0];
-            int y = gid[1];
+      cgh.parallel_for<class MedianFilterBenchKernel>(ndrange, [in, out, size_ = size](sycl::id<2> gid) {
+        int x = gid[0];
+        int y = gid[1];
 
-            // Optimization note: this array can be prefetched in local memory, TODO
-            for(size_t i = 0; i < num_iters; i++) {
-              sycl::float4 window[9];
+        // Optimization note: this array can be prefetched in local memory, TODO
+        sycl::float4 window[9];
+        int k = 0;
+        for(int i = -1; i < 2; i++)
+          for(int j = -1; j < 2; j++) {
+            uint xs =
+                s::min(s::max(x + j, 0), static_cast<int>(size_ - 1)); // borders are handled here with extended values
+            uint ys = s::min(s::max(y + i, 0), static_cast<int>(size_ - 1));
+            window[k] = in[{xs, ys}];
+            k++;
+          }
 
-              int k = 0;
-              for(int i = -1; i < 2; i++)
-                for(int j = -1; j < 2; j++) {
-                  uint xs = s::min(
-                      s::max(x + j, 0), static_cast<int>(size_ - 1)); // borders are handled here with extended values
-                  uint ys = s::min(s::max(y + i, 0), static_cast<int>(size_ - 1));
-                  window[k] = in[{xs, ys}];
-                  k++;
-                }
+        // (channel-wise) median selection using bitonic sorting
+        // the following network is used (Bose-Nelson algorithm):
+        // [[0,1],[2,3],[4,5],[7,8]]
+        // [[0,2],[1,3],[6,8]]
+        // [[1,2],[6,7],[5,8]]
+        // [[4,7],[3,8]]
+        // [[4,6],[5,7]]
+        // [[5,6],[2,7]]
+        // [[0,5],[1,6],[3,7]]
+        // [[0,4],[1,5],[3,6]]
+        // [[1,4],[2,5]]
+        // [[2,4],[3,5]]
+        // [[3,4]]
+        // se also http://pages.ripco.net/~jgamble/nw.html
+        swap(window, 0, 1);
+        swap(window, 2, 3);
+        swap(window, 0, 2);
+        swap(window, 1, 3);
+        swap(window, 1, 2);
+        swap(window, 4, 5);
+        swap(window, 7, 8);
+        swap(window, 6, 8);
+        swap(window, 6, 7);
+        swap(window, 4, 7);
+        swap(window, 4, 6);
+        swap(window, 5, 8);
+        swap(window, 5, 7);
+        swap(window, 5, 6);
+        swap(window, 0, 5);
+        swap(window, 0, 4);
+        swap(window, 1, 6);
+        swap(window, 1, 5);
+        swap(window, 1, 4);
+        swap(window, 2, 7);
+        swap(window, 3, 8);
+        swap(window, 3, 7);
+        swap(window, 2, 5);
+        swap(window, 2, 4);
+        swap(window, 3, 6);
+        swap(window, 3, 5);
+        swap(window, 3, 4);
 
-              // (channel-wise) median selection using bitonic sorting
-              // the following network is used (Bose-Nelson algorithm):
-              // [[0,1],[2,3],[4,5],[7,8]]
-              // [[0,2],[1,3],[6,8]]
-              // [[1,2],[6,7],[5,8]]
-              // [[4,7],[3,8]]
-              // [[4,6],[5,7]]
-              // [[5,6],[2,7]]
-              // [[0,5],[1,6],[3,7]]
-              // [[0,4],[1,5],[3,6]]
-              // [[1,4],[2,5]]
-              // [[2,4],[3,5]]
-              // [[3,4]]
-              // se also http://pages.ripco.net/~jgamble/nw.html
-              swap(window, 0, 1);
-              swap(window, 2, 3);
-              swap(window, 0, 2);
-              swap(window, 1, 3);
-              swap(window, 1, 2);
-              swap(window, 4, 5);
-              swap(window, 7, 8);
-              swap(window, 6, 8);
-              swap(window, 6, 7);
-              swap(window, 4, 7);
-              swap(window, 4, 6);
-              swap(window, 5, 8);
-              swap(window, 5, 7);
-              swap(window, 5, 6);
-              swap(window, 0, 5);
-              swap(window, 0, 4);
-              swap(window, 1, 6);
-              swap(window, 1, 5);
-              swap(window, 1, 4);
-              swap(window, 2, 7);
-              swap(window, 3, 8);
-              swap(window, 3, 7);
-              swap(window, 2, 5);
-              swap(window, 2, 4);
-              swap(window, 3, 6);
-              swap(window, 3, 5);
-              swap(window, 3, 4);
-
-              out[gid] = window[4];
-            }
-          });
+        out[gid] = window[4];
+      });
     }));
 
     args.device_queue.wait_and_throw();

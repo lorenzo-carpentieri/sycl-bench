@@ -31,11 +31,13 @@ option(ENABLED_SYNERGY "Enable SYnergy support" OFF)
 option(ENABLED_TIME_EVENT_PROFILING "Enable time profiling with sycl event" OFF)
 
 set(supported_implementations
-  hipSYCL
-  LLVM
-  LLVM-CUDA
+  AdaptiveCpp
+  dpcpp
   triSYCL
-)
+)# SYCL Bench variables
+set(SYCL_BENCH_ENABLE_FP64_BENCHMARKS "ON" CACHE STRING "Enable FP64 benchmarks [ON]")
+
+
 
 list(FIND supported_implementations ${SYCL_IMPL} impl_idx)
 
@@ -43,17 +45,40 @@ if(NOT SYCL_IMPL OR impl_idx EQUAL -1)
   message(FATAL_ERROR "Please specify SYCL_IMPL (one of: ${supported_implementations})")
 endif()
 
-if(SYCL_IMPL STREQUAL "hipSYCL")
-  find_package(hipSYCL CONFIG REQUIRED)
-elseif(SYCL_IMPL STREQUAL "LLVM")
+if(SYCL_IMPL STREQUAL "AdaptiveCpp")
+  find_package(AdaptiveCpp REQUIRED)
+elseif(SYCL_IMPL STREQUAL "dpcpp")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsycl")
-elseif(SYCL_IMPL STREQUAL "LLVM-CUDA")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsycl -fsycl-targets=nvptx64-nvidia-cuda")
-  set(SYCL_BENCH_CUDA_ARCH "" CACHE STRING "CUDA architecture in format \"sm_xy\"")
 
-  if(NOT SYCL_BENCH_CUDA_ARCH STREQUAL "")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Xsycl-target-backend --cuda-gpu-arch=${SYCL_BENCH_CUDA_ARCH}")
+  if(DPCPP_WITH_CUDA_BACKEND)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsycl-targets=nvptx64-nvidia-cuda")
+
+    set(CUDA_ARCH "" CACHE STRING "CUDA device architecture e.g. sm_70")
+
+    if(NOT CUDA_ARCH STREQUAL "")
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Xsycl-target-backend --cuda-gpu-arch=${CUDA_ARCH}")
+    endif()
   endif()
+
+  if(DPCPP_WITH_ROCM_BACKEND)
+    set(ROCM_ARCH "" CACHE STRING "ROCm device architecture e.g. gfx908")
+
+    if(NOT ROCM_ARCH STREQUAL "")
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsycl-targets=amd_gpu_${ROCM_ARCH}")
+    endif()
+  endif()
+
+  if(DPCPP_WITH_LZ_BACKEND)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsycl-targets=spir64_gen")
+
+    set(LZ_ARCH "" CACHE STRING "Level Zero device architecture e.g. acm-g10")
+
+    if(NOT LZ_ARCH STREQUAL "")
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Xsycl-target-backend \"-device ${LZ_ARCH}\"")
+    endif()
+  endif()
+elseif(SYCL_IMPL STREQUAL "triSYCL")
+  find_package(TriSYCL MODULE REQUIRED)
 endif()
 
 set(benchmarks
@@ -119,13 +144,12 @@ set(benchmarks
   polybench/syr2k.cpp
   polybench/syrk.cpp
 
-  # Not working
   # compiletime/compiletime.cpp
-  # runtime/dag_task_throughput_sequential.cpp
-  # runtime/dag_task_throughput_independent.cpp
-  # single-kernel/nbody.cpp
-  # single-kernel/scalar_prod.cpp
+  spec_constants/spec_constant_convolution.cpp
 )
+
+# Setting variables
+add_compile_definitions(SYCL_BENCH_ENABLE_FP64_BENCHMARKS=$<BOOL:${SYCL_BENCH_ENABLE_FP64_BENCHMARKS}>)
 
 foreach(benchmark IN LISTS benchmarks)
   get_filename_component(target ${benchmark} NAME_WE)
@@ -140,18 +164,14 @@ foreach(benchmark IN LISTS benchmarks)
   if(ENABLED_TIME_EVENT_PROFILING)
     target_compile_definitions(${target} PUBLIC SYCL_BENCH_ENABLE_QUEUE_PROFILING=1)
   endif()
-
-  if(SYCL_IMPL STREQUAL "hipSYCL")
-    add_sycl_to_target(TARGET ${target} SOURCES ${benchmark})
+  if(SYCL_IMPL STREQUAL "AdaptiveCpp")
+  add_sycl_to_target(TARGET ${target} SOURCES ${benchmark})
   endif()
 
-  if(SYCL_IMPL STREQUAL "LLVM")
-    target_compile_definitions(${target} PRIVATE __LLVM_SYCL__)
+  if(SYCL_IMPL STREQUAL "dpcpp")
+    target_compile_definitions(${target} PRIVATE __DPCPP__)
   endif()
-
-  if(SYCL_IMPL STREQUAL "LLVM-CUDA")
-    target_compile_definitions(${target} PRIVATE __LLVM_SYCL_CUDA__)
-  endif()
+  
 
   install(TARGETS ${target} RUNTIME DESTINATION bin/benchmarks/)
   get_filename_component(dir ${benchmark} DIRECTORY)
@@ -164,6 +184,5 @@ if(ENABLED_SYNERGY)
   add_subdirectory(SYnergy)
 endif()
 
-# add_subdirectory(micro-bench-energy)
 install(PROGRAMS bin/run-suite DESTINATION bin/)
 install(FILES ${PROJECT_SOURCE_DIR}/Brommy.bmp DESTINATION share/)

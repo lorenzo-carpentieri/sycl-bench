@@ -2,7 +2,9 @@
 
 #include <cassert>
 #include <iostream>
+#include <limits>
 
+using namespace sycl;
 
 template <class float_type>
 class NDRangeNBodyKernel;
@@ -33,13 +35,11 @@ protected:
   PrefetchedBuffer<vector_type> velocities_buf;
 
 public:
-  NBody(BenchmarkArgs& _args) : args(_args), gravitational_softening{1.e-5f}, dt{1.e-2f} {
+  NBody(const BenchmarkArgs& _args) : args(_args), gravitational_softening{1.e-5f}, dt{1.e-2f} {
     assert(args.problem_size % args.local_size == 0);
   }
 
   void setup() {
-    num_iters = args.num_iterations;
-
     particles.resize(args.problem_size);
     velocities.resize(args.problem_size);
 
@@ -99,40 +99,19 @@ public:
       host_resulting_velocities[i] = new_v;
     }
 
-    double deviation = std::sqrt(calculateSquaredDifference(host_resulting_particles.data(),
-                                     resulting_particles.get_pointer(), particles.size()) +
-                                 calculateSquaredDifference(host_resulting_velocities.data(),
-                                     resulting_velocities.get_pointer(), particles.size()));
-
-    return deviation < 1.e-6;
+    constexpr float_type maxErr = 10.f * std::numeric_limits<float_type>::epsilon();
+    return checkResults(host_resulting_particles.begin(), host_resulting_particles.end(),
+               resulting_particles.get_pointer(), maxErr) &&
+           checkResults(host_resulting_velocities.begin(), host_resulting_velocities.end(),
+               resulting_velocities.get_pointer(), maxErr);
   }
 
 protected:
-  template <class T>
-  double calculateSquaredDifference(sycl::vec<T, 3> a, sycl::vec<T, 3> b) {
-    auto diff = a - b;
-    diff *= diff;
-
-    return static_cast<float_type>(diff.x() + diff.y() + diff.z());
-  }
-
-  template <class T>
-  double calculateSquaredDifference(sycl::vec<T, 4> a, sycl::vec<T, 4> b) {
-    auto diff = a - b;
-    diff *= diff;
-
-    return static_cast<float_type>(diff.x() + diff.y() + diff.z() + diff.w());
-  }
-
-  template <class T>
-  double calculateSquaredDifference(const T* a, const T* b, std::size_t size) {
-    double result = 0.0;
-
-    for(std::size_t i = 0; i < size; ++i) {
-      result += calculateSquaredDifference(a[i], b[i]);
-    }
-
-    return result;
+  template <class InputIter0, class InputIter1>
+  static bool checkResults(InputIter0 expectedBegin, InputIter0 expectedEnd, InputIter1 gotBegin, float_type maxErr) {
+    return std::equal(expectedBegin, expectedEnd, gotBegin, [=](const auto& expected, const auto& got) {
+      return sycl::distance(expected, got) / sycl::length(expected) < maxErr;
+    });
   }
 
   void submitNDRange(sycl::buffer<particle_type>& particles, sycl::buffer<vector_type>& velocities) {
@@ -165,7 +144,7 @@ protected:
               scratch[local_id] = (global_id < num_particles) ? particles_access[offset + local_id]
                                                               : particle_type{static_cast<float_type>(0.0f)};
 
-              tid.barrier();
+              sycl::group_barrier(tid.get_group());
 
               for(int i = 0; i < local_size; ++i) {
                 const particle_type p = scratch[i];
@@ -180,7 +159,7 @@ protected:
                   acceleration += static_cast<float_type>(p.w()) * r_inv * r_inv * r_inv * R;
               }
 
-              tid.barrier();
+              sycl::group_barrier(tid.get_group());
             }
 
             // This is a dirt cheap Euler integration, but could be
@@ -284,7 +263,8 @@ public:
   using typename NBody<float_type>::particle_type;
   using typename NBody<float_type>::vector_type;
 
-  NBodyNDRange(BenchmarkArgs& _args) : NBody<float_type>{_args} {}
+  NBodyNDRange(const BenchmarkArgs& _args) : NBody<float_type> { _args }
+  {}
 
 
   void run() { this->submitNDRange(this->particles_buf.get(), this->velocities_buf.get()); }
@@ -304,7 +284,8 @@ public:
   using typename NBody<float_type>::particle_type;
   using typename NBody<float_type>::vector_type;
 
-  NBodyHierarchical(BenchmarkArgs& _args) : NBody<float_type>{_args} {}
+  NBodyHierarchical(const BenchmarkArgs& _args) : NBody<float_type> { _args }
+  {}
 
 
   void run() { this->submitHierarchical(this->particles_buf.get(), this->velocities_buf.get()); }
@@ -322,11 +303,16 @@ int main(int argc, char** argv) {
   BenchmarkApp app(argc, argv);
 
   app.run<NBodyHierarchical<float>>();
-  app.run<NBodyHierarchical<double>>();
-
+  if constexpr(SYCL_BENCH_ENABLE_FP64_BENCHMARKS) {
+    if(app.deviceSupportsFP64())
+      app.run<NBodyHierarchical<double>>();
+  }
   if(app.shouldRunNDRangeKernels()) {
     app.run<NBodyNDRange<float>>();
-    app.run<NBodyNDRange<double>>();
+    if constexpr(SYCL_BENCH_ENABLE_FP64_BENCHMARKS) {
+      if(app.deviceSupportsFP64())
+        app.run<NBodyNDRange<double>>();
+    }
   }
 
   return 0;

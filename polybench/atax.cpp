@@ -46,7 +46,7 @@ void atax_cpu(DATA_TYPE* A, DATA_TYPE* x, DATA_TYPE* y, DATA_TYPE* tmp, size_t s
 
 class Polybench_Atax {
 public:
-  Polybench_Atax(BenchmarkArgs& args) : args(args), size(args.problem_size) {}
+  Polybench_Atax(const BenchmarkArgs& args) : args(args), size(args.problem_size) {}
 
   void setup() {
     A.resize(size * size);
@@ -118,7 +118,7 @@ public:
   static std::string getBenchmarkName() { return "Polybench_Atax"; }
 
 private:
-   BenchmarkArgs& args;
+  BenchmarkArgs args;
 
   const size_t size;
   std::vector<DATA_TYPE> A;

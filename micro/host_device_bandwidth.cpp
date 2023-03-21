@@ -66,7 +66,7 @@ class H2DVerificationKernel;
 template <int Dims, CopyDirection Direction, bool Strided>
 class MicroBenchHostDeviceBandwidth {
 protected:
-   BenchmarkArgs& args;
+  BenchmarkArgs& args;
   // The buffer size to be copied. This is independent of stride.
   const s::range<Dims> copy_size;
   // The host buffer used as source or target for (some) copy operations.
@@ -144,7 +144,7 @@ public:
 
       if constexpr(Direction == CopyDirection::DEVICE_TO_HOST) {
         // Request host accessor for data that has been written on device
-        buffer->template get_host_access();
+        buffer->get_host_access();
       }
     }
 
@@ -202,13 +202,13 @@ public:
         cgh.single_task<H2DVerificationKernel<Dims, Strided>>([=]() { /* NOP */ });
       });
 
-      auto acc = buffer->template get_host_access();
+      auto acc = buffer->get_host_access();
       return verifyAccessor(acc);
     }
 
     if constexpr(Direction == CopyDirection::DEVICE_TO_HOST) {
       if constexpr(!Strided) {
-        auto acc = buffer->template get_host_access();
+        auto acc = buffer->get_host_access();
         return verifyAccessor(acc);
       }
 

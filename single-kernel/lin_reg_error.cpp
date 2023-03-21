@@ -9,14 +9,13 @@ class LinearRegressionKernel;
 template <typename T>
 class LinearRegressionBench {
 protected:
-  size_t num_iters;
   std::vector<T> input1;
   std::vector<T> input2;
   std::vector<T> alpha;
   std::vector<T> beta;
   std::vector<T> output;
   std::vector<T> expected_output;
-  BenchmarkArgs& args;
+  BenchmarkArgs args;
 
   PrefetchedBuffer<T, 1> input1_buf;
   PrefetchedBuffer<T, 1> input2_buf;
@@ -25,11 +24,9 @@ protected:
   PrefetchedBuffer<T, 1> output_buf;
 
 public:
-  LinearRegressionBench(BenchmarkArgs& _args) : args(_args) {}
+  LinearRegressionBench(const BenchmarkArgs& _args) : args(_args) {}
 
   void setup() {
-    num_iters = args.num_iterations;
-
     // host memory allocation and initialization
     input1.resize(args.problem_size);
     input2.resize(args.problem_size);
@@ -64,23 +61,19 @@ public:
       sycl::range<1> ndrange(args.problem_size);
 
       cgh.parallel_for<class LinearRegressionKernel<T>>(
-          ndrange, [=, problem_size = args.problem_size, num_iters = num_iters](sycl::id<1> idx) {
+          ndrange, [=, problem_size = args.problem_size](sycl::id<1> idx) {
             size_t gid = idx[0];
             T a = alpha[gid];
             T b = beta[gid];
-
-            for(size_t i = 0; i < num_iters; i++) {
-              T error = 0.0;
-
-              if(gid < problem_size) {
-                // Use parallel reduction to add errors
-                for(size_t i = 0; i < problem_size; i++) {
-                  T e = (a * in1[i] + b) - in2[i];
-                  error += e * e;
-                }
+            T error = 0.0;
+            if(gid < problem_size) {
+              // Use parallel reduction to add errors
+              for(size_t i = 0; i < problem_size; i++) {
+                T e = (a * in1[i] + b) - in2[i];
+                error += e * e;
               }
-              output[gid] = error;
             }
+            output[gid] = error;
           });
     }));
   }
@@ -134,6 +127,9 @@ public:
 int main(int argc, char** argv) {
   BenchmarkApp app(argc, argv);
   app.run<LinearRegressionBench<float>>();
-  app.run<LinearRegressionBench<double>>();
+  if constexpr(SYCL_BENCH_ENABLE_FP64_BENCHMARKS) {
+    if(app.deviceSupportsFP64())
+      app.run<LinearRegressionBench<double>>();
+  }
   return 0;
 }

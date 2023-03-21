@@ -5,10 +5,10 @@
 namespace s = sycl;
 
 #include <kernel_declarations.inc>
+#include <kernels.inc>
 
 void run(size_t rt_size) {
   sycl::queue device_queue;
-  #include <kernels.inc>
   device_queue.wait_and_throw();
 }
 

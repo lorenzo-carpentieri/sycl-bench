@@ -1,7 +1,7 @@
 #pragma once
+#include "queue_macro.h"
 #include <memory>
 #include <sycl/sycl.hpp>
-#include "queue_macro.h"
 
 template <class AccType>
 class InitializationDummyKernel {

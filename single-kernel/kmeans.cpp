@@ -13,7 +13,6 @@ class KmeansKernel;
 template <typename T>
 class KmeansBench {
 protected:
-  size_t num_iters;
   std::vector<T> features;
   std::vector<T> clusters;
   std::vector<int> membership;
@@ -21,7 +20,7 @@ protected:
   int nclusters;
   int feature_size;
   int cluster_size;
-  BenchmarkArgs& args;
+  BenchmarkArgs args;
 
 
   PrefetchedBuffer<T, 1> features_buf;
@@ -29,11 +28,9 @@ protected:
   PrefetchedBuffer<int, 1> membership_buf;
 
 public:
-  KmeansBench(BenchmarkArgs& _args) : args(_args) {}
+  KmeansBench(const BenchmarkArgs& _args) : args(_args) {}
 
   void setup() {
-    num_iters = args.num_iterations;
-
     // host memory allocation and initialization
     nfeatures = 2;
     nclusters = 3;
@@ -60,26 +57,24 @@ public:
 
       cgh.parallel_for<class KmeansKernel<T>>(
           ndrange, [features, clusters, membership, problem_size = args.problem_size, nclusters_ = nclusters,
-                       nfeatures_ = nfeatures, num_iters = num_iters](sycl::id<1> idx) {
+                       nfeatures_ = nfeatures](sycl::id<1> idx) {
             size_t gid = idx[0];
 
             if(gid < problem_size) {
-              for(size_t i = 0; i < num_iters; i++) {
-                int index = 0;
-                T min_dist = FLT_MAX;
-                for(size_t i = 0; i < nclusters_; i++) {
-                  T dist = 0;
-                  for(size_t l = 0; l < nfeatures_; l++) {
-                    dist += (features[l * problem_size + gid] - clusters[i * nfeatures_ + l]) *
-                            (features[l * problem_size + gid] - clusters[i * nfeatures_ + l]);
-                  }
-                  if(dist < min_dist) {
-                    min_dist = dist;
-                    index = gid;
-                  }
+              int index = 0;
+              T min_dist = FLT_MAX;
+              for(size_t i = 0; i < nclusters_; i++) {
+                T dist = 0;
+                for(size_t l = 0; l < nfeatures_; l++) {
+                  dist += (features[l * problem_size + gid] - clusters[i * nfeatures_ + l]) *
+                          (features[l * problem_size + gid] - clusters[i * nfeatures_ + l]);
                 }
-                membership[gid] = index;
+                if(dist < min_dist) {
+                  min_dist = dist;
+                  index = gid;
+                }
               }
+              membership[gid] = index;
             }
           });
     }));
@@ -129,6 +124,9 @@ public:
 int main(int argc, char** argv) {
   BenchmarkApp app(argc, argv);
   app.run<KmeansBench<float>>();
-  app.run<KmeansBench<double>>();
+  if constexpr(SYCL_BENCH_ENABLE_FP64_BENCHMARKS) {
+    if(app.deviceSupportsFP64())
+      app.run<KmeansBench<double>>();
+  }
   return 0;
 }

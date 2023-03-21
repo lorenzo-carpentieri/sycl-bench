@@ -12,8 +12,6 @@ class VecReduceKernel;
 template <typename T>
 class LinearRegressionCoeffBench {
 protected:
-  size_t num_iters;
-
   std::vector<T> input1;
   std::vector<T> input2;
   std::vector<T> output;
@@ -23,18 +21,16 @@ protected:
   // Only needed for verification as reduction is done inplace which modifies the input
   std::vector<T> input1ver;
   std::vector<T> input2ver;
-  BenchmarkArgs& args;
+  BenchmarkArgs args;
 
   PrefetchedBuffer<T, 1> input1_buf;
   PrefetchedBuffer<T, 1> input2_buf;
   PrefetchedBuffer<T, 1> output_buf;
 
 public:
-  LinearRegressionCoeffBench(BenchmarkArgs& _args) : args(_args) {}
+  LinearRegressionCoeffBench(const BenchmarkArgs& _args) : args(_args) {}
 
   void setup() {
-    num_iters = args.num_iterations;
-
     // host memory allocation and initialization
     input1.resize(args.problem_size);
     input2.resize(args.problem_size);
@@ -99,7 +95,8 @@ public:
             local_mem[lid] = global_mem[elements_per_thread * gid] + global_mem[elements_per_thread * gid + 1];
           }
 
-          item.barrier(s::access::fence_space::local_space);
+          sycl::group_barrier(item.get_group());
+
 
           for(size_t stride = 1; stride < wgroup_size; stride *= elements_per_thread) {
             auto local_mem_index = elements_per_thread * stride * lid;
@@ -107,7 +104,7 @@ public:
               local_mem[local_mem_index] = local_mem[local_mem_index] + local_mem[local_mem_index + stride];
             }
 
-            item.barrier(s::access::fence_space::local_space);
+            sycl::group_barrier(item.get_group());
           }
 
           // Only one work-item per work group writes to global memory
@@ -123,28 +120,26 @@ public:
   }
 
   void run(std::vector<sycl::event>& events) {
-    for(size_t i = 0; i < num_iters; i++) {
-      vec_product(events, input1_buf.get(), input2_buf.get(), output_buf.get());
+    vec_product(events, input1_buf.get(), input2_buf.get(), output_buf.get());
 
-      T ss_xy = reduce(events, output_buf.get());
+    T ss_xy = reduce(events, output_buf.get());
 
-      vec_product(events, input1_buf.get(), input1_buf.get(), output_buf.get());
+    vec_product(events, input1_buf.get(), input1_buf.get(), output_buf.get());
 
-      T ss_xx = reduce(events, output_buf.get());
+    T ss_xx = reduce(events, output_buf.get());
 
-      T mean_x = reduce(events, input1_buf.get()) / args.problem_size;
-      T mean_y = reduce(events, input2_buf.get()) / args.problem_size;
+    T mean_x = reduce(events, input1_buf.get()) / args.problem_size;
+    T mean_y = reduce(events, input2_buf.get()) / args.problem_size;
 
-      ss_xy = ss_xy - mean_x * mean_y;
-      ss_xx = ss_xx - mean_x * mean_x;
+    ss_xy = ss_xy - mean_x * mean_y;
+    ss_xx = ss_xx - mean_x * mean_x;
 
-      coeff_b1 = ss_xy / ss_xx;
-      coeff_b0 = mean_y - coeff_b1 * mean_x;
+    coeff_b1 = ss_xy / ss_xx;
+    coeff_b0 = mean_y - coeff_b1 * mean_x;
 
-      // std::cout << "ss_xy = " << ss_xy << "ss_xx = " << ss_xx << std::endl;
-      // std::cout << "Mean_x = " << mean_x << "Mean_y = " << mean_y << std::endl;
-      // std::cout << "Coeff_b1 = " << coeff_b1 << ", " << "Coeff_b0 = " << coeff_b0 << std::endl;
-    }
+    // std::cout << "ss_xy = " << ss_xy << "ss_xx = " << ss_xx << std::endl;
+    // std::cout << "Mean_x = " << mean_x << "Mean_y = " << mean_y << std::endl;
+    // std::cout << "Coeff_b1 = " << coeff_b1 << ", " << "Coeff_b0 = " << coeff_b0 << std::endl;
   }
 
   bool verify(VerificationSetting& ver) {
@@ -196,7 +191,10 @@ int main(int argc, char** argv) {
   BenchmarkApp app(argc, argv);
   if(app.shouldRunNDRangeKernels()) {
     app.run<LinearRegressionCoeffBench<float>>();
-    app.run<LinearRegressionCoeffBench<double>>();
+    if constexpr(SYCL_BENCH_ENABLE_FP64_BENCHMARKS) {
+      if(app.deviceSupportsFP64())
+        app.run<LinearRegressionCoeffBench<double>>();
+    }
   }
   return 0;
 }

@@ -47,7 +47,7 @@ public:
 
         local_mem[lid] = in[gid];
 
-        item.barrier(s::access::fence_space::local_space);
+        s::group_barrier(item.get_group());
 
         // Note: this is dangerous, as a compiler could in principle be smart enough to figure out that it can just drop
         // this
@@ -57,7 +57,7 @@ public:
           local_mem[lid2] = local_mem[lid];
         }
 
-        item.barrier(s::access::fence_space::local_space);
+        s::group_barrier(item.get_group());
 
         out[gid] = local_mem[lid];
       });
@@ -100,7 +100,9 @@ int main(int argc, char** argv) {
   app.run<MicroBenchLocalMemory<float, compute_iters>>();
 
   // double precision
-  app.run<MicroBenchLocalMemory<double, compute_iters>>();
-
+  if constexpr(SYCL_BENCH_ENABLE_FP64_BENCHMARKS) {
+    if(app.deviceSupportsFP64())
+      app.run<MicroBenchLocalMemory<double, compute_iters>>();
+  }
   return 0;
 }

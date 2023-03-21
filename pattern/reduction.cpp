@@ -7,6 +7,7 @@
 #include <numeric>
 #include <vector>
 
+using namespace sycl;
 
 template <typename T>
 class ReductionKernelNDRange;
@@ -25,7 +26,7 @@ protected:
   T _result;
 
 public:
-  Reduction(BenchmarkArgs& args) : _args{args} { assert(_args.problem_size % _args.local_size == 0); }
+  Reduction(const BenchmarkArgs& args) : _args{args} { assert(_args.problem_size % _args.local_size == 0); }
 
   void generate_input(std::vector<T>& out) {
     out.resize(_args.problem_size);
@@ -56,7 +57,7 @@ public:
   }
 
   bool verify(VerificationSetting& ver) {
-    T result = _final_output_buff->template get_host_access(sycl::range<1>{0}, sycl::id<1>{1})[0];
+    T result = _final_output_buff->get_host_access()[0];
 
     // Calculate CPU result in fp64 to avoid obtaining a wrong verification result
     std::vector<double> input_fp64(_input.size());
@@ -106,7 +107,6 @@ private:
       auto acc = input->template get_access<mode::read>(cgh);
       auto acc_out = output->template get_access<mode::discard_write>(cgh);
       auto scratch = sycl::local_accessor<T, 1>{_args.local_size, cgh};
-
       const int group_size = _args.local_size;
 
       cgh.parallel_for<ReductionKernelNDRange<T>>(ndrange, [=](sycl::nd_item<1> item) {
@@ -116,7 +116,7 @@ private:
         scratch[lid] = (gid[0] < reduction_size) ? acc[gid] : 0;
 
         for(int i = group_size / 2; i > 0; i /= 2) {
-          item.barrier();
+          sycl::group_barrier(item.get_group());
           if(lid < i)
             scratch[lid] += scratch[lid + i];
         }
@@ -171,7 +171,8 @@ private:
 template <class T>
 class ReductionNDRange : public Reduction<T> {
 public:
-  ReductionNDRange(BenchmarkArgs& args) : Reduction<T>{args} {}
+  ReductionNDRange(const BenchmarkArgs& args) : Reduction<T> { args }
+  {}
 
   void run(std::vector<sycl::event>& events) { this->submit_ndrange(events); }
 
@@ -186,7 +187,8 @@ public:
 template <class T>
 class ReductionHierarchical : public Reduction<T> {
 public:
-  ReductionHierarchical(BenchmarkArgs& args) : Reduction<T>{args} {}
+  ReductionHierarchical(const BenchmarkArgs& args) : Reduction<T> { args }
+  {}
 
   void run(std::vector<sycl::event>& events) {
     this->submit_hierarchical(events);
@@ -212,13 +214,18 @@ int main(int argc, char** argv) {
     app.run<ReductionNDRange<int>>();
     app.run<ReductionNDRange<long long>>();
     app.run<ReductionNDRange<float>>();
-    app.run<ReductionNDRange<double>>();
+    if constexpr(SYCL_BENCH_ENABLE_FP64_BENCHMARKS) {
+      if(app.deviceSupportsFP64())
+        app.run<ReductionNDRange<double>>();
+    }
   }
   // app.run< ReductionHierarchical<short>>();
   app.run<ReductionHierarchical<int>>();
   app.run<ReductionHierarchical<long long>>();
   app.run<ReductionHierarchical<float>>();
-  app.run<ReductionHierarchical<double>>();
-
+  if constexpr(SYCL_BENCH_ENABLE_FP64_BENCHMARKS) {
+    if(app.deviceSupportsFP64())
+      app.run<ReductionHierarchical<double>>();
+  }
   return 0;
 }

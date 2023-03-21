@@ -150,16 +150,6 @@ struct BenchmarkArgs {
 };
 
 
-int CUDASelector(const sycl::device& device) {
-  using namespace sycl::info;
-  const std::string driverVersion = device.get_info<device::driver_version>();
-  if(device.is_gpu() && (driverVersion.find("CUDA") != std::string::npos)) {
-    return 1;
-  };
-  return -1;
-}
-
-
 class BenchmarkCommandLine {
 public:
   BenchmarkCommandLine(int argc, char** argv) : cli_parser{argc, argv} {}
@@ -211,32 +201,36 @@ private:
       // as the target file name
       return std::shared_ptr<ResultConsumer>{new AppendingCsvResultConsumer{result_consumer_name}};
   }
+
   selected_queue getQueue(const std::string& device_type) const {
-#if defined(__LLVM_SYCL_CUDA__)
-    if(device_type != "gpu") {
-      throw std::invalid_argument{"Only the 'gpu' device is supported on LLVM CUDA"};
-    }
+    const auto getQueueProperties = [&]() -> sycl::property_list {
+#if defined(SYCL_BENCH_ENABLE_QUEUE_PROFILING)
+      return sycl::property::queue::enable_profiling{};
+#endif
+      return {};
+    };
+
 
     return selected_queue(CUDASelector, queueProperties);
 #endif
 #ifndef __ENABLED_SYNERGY
     if(device_type == "cpu") {
-      return sycl::queue{sycl::cpu_selector_v, queueProperties};
+      return sycl::queue{sycl::cpu_selector_v, getQueueProperties()};
     } else if(device_type == "gpu") {
-      return sycl::queue{sycl::gpu_selector_v, queueProperties};
+      return sycl::queue{sycl::gpu_selector_v, getQueueProperties()};
     } else if(device_type == "default") {
-      return sycl::queue{queueProperties};
+      return sycl::queue{getQueueProperties()};
     } else {
       throw std::invalid_argument{"unknown device type: " + device_type};
     }
 #else
-    if(device_type == "gpu") {
-      return selected_queue{queueProperties};
-    } else if(device_type == "default") {
-      return selected_queue{queueProperties};
-    } else {
-      throw std::invalid_argument{"unknown device type: " + device_type};
-    }
+if(device_type == "gpu") {
+  return selected_queue{queueProperties};
+} else if(device_type == "default") {
+  return selected_queue{queueProperties};
+} else {
+  throw std::invalid_argument{"unknown device type: " + device_type};
+}
 #endif
   }
 

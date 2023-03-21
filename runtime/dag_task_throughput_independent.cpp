@@ -2,6 +2,7 @@
 
 #include <vector>
 
+using namespace sycl;
 
 class IndependentDagTaskThroughputKernelSingleTask;
 class IndependentDagTaskThroughputKernelBasicPF;
@@ -14,10 +15,10 @@ class DagTaskThroughputKernelHierarchicalPF;
 // can utilize hardware concurrency.
 class IndependentDagTaskThroughput {
   std::vector<sycl::buffer<int, 1>> dummy_buffers;
-   BenchmarkArgs& args;
+  BenchmarkArgs args;
 
 public:
-  IndependentDagTaskThroughput(BenchmarkArgs& _args) : args(_args) {}
+  IndependentDagTaskThroughput(const BenchmarkArgs& _args) : args(_args) {}
 
   void setup() {
     for(std::size_t i = 0; i < args.problem_size; ++i) {
@@ -96,7 +97,7 @@ public:
 
 class IndependentDagTaskThroughputSingleTask : public IndependentDagTaskThroughput {
 public:
-  IndependentDagTaskThroughputSingleTask(BenchmarkArgs& args) : IndependentDagTaskThroughput{args} {}
+  IndependentDagTaskThroughputSingleTask(const BenchmarkArgs& args) : IndependentDagTaskThroughput{args} {}
 
   void run() { submit_single_task(); }
 
@@ -105,7 +106,7 @@ public:
 
 class IndependentDagTaskThroughputBasicPF : public IndependentDagTaskThroughput {
 public:
-  IndependentDagTaskThroughputBasicPF(BenchmarkArgs& args) : IndependentDagTaskThroughput{args} {}
+  IndependentDagTaskThroughputBasicPF(const BenchmarkArgs& args) : IndependentDagTaskThroughput{args} {}
 
   void run() { submit_basic_parallel_for(); }
 
@@ -114,7 +115,7 @@ public:
 
 class IndependentDagTaskThroughputNDRangePF : public IndependentDagTaskThroughput {
 public:
-  IndependentDagTaskThroughputNDRangePF(BenchmarkArgs& args) : IndependentDagTaskThroughput{args} {}
+  IndependentDagTaskThroughputNDRangePF(const BenchmarkArgs& args) : IndependentDagTaskThroughput{args} {}
 
   void run() { submit_ndrange_parallel_for(); }
 
@@ -123,7 +124,7 @@ public:
 
 class IndependentDagTaskThroughputHierarchicalPF : public IndependentDagTaskThroughput {
 public:
-  IndependentDagTaskThroughputHierarchicalPF(BenchmarkArgs& args) : IndependentDagTaskThroughput{args} {}
+  IndependentDagTaskThroughputHierarchicalPF(const BenchmarkArgs& args) : IndependentDagTaskThroughput{args} {}
 
   void run() { submit_hierarchical_parallel_for(); }
 

@@ -23,7 +23,6 @@
 #include "queue_macro.h"
 #include "time_metrics.h"
 
-
 #ifdef NV_ENERGY_MEAS
 #include "nv_energy_meas.h"
 #endif
@@ -42,11 +41,11 @@ public:
 
     args.result_consumer->consumeResult("problem-size", std::to_string(args.problem_size));
     args.result_consumer->consumeResult("local-size", std::to_string(args.local_size));
-    #ifdef __ENABLED_SYNERGY
-      args.result_consumer->consumeResult("num-iters", std::to_string(args.num_iterations));
-      args.result_consumer->consumeResult("core-freq", std::to_string(args.core_freq));
-      args.result_consumer->consumeResult("memory-freq", std::to_string(args.memory_freq));
-    #endif
+#ifdef __ENABLED_SYNERGY
+    args.result_consumer->consumeResult("num-iters", std::to_string(args.num_iterations));
+    args.result_consumer->consumeResult("core-freq", std::to_string(args.core_freq));
+    args.result_consumer->consumeResult("memory-freq", std::to_string(args.memory_freq));
+#endif
     args.result_consumer->consumeResult(
         "device-name", args.device_queue.get_device().template get_info<sycl::info::device::name>());
     args.result_consumer->consumeResult("sycl-implementation", this->getSyclImplementation());
@@ -140,7 +139,6 @@ public:
     time_metrics.emitResults(*args.result_consumer);
     energy_metrics.emitResults(*args.result_consumer);
 
-
     for(auto h : hooks) {
       // Extract results from the hooks
       h->emitResults(*args.result_consumer);
@@ -165,12 +163,10 @@ private:
   std::vector<BenchmarkHook*> hooks;
 
   std::string getSyclImplementation() const {
-#if defined(__HIPSYCL__)
-    return "hipSYCL";
-#elif defined(__LLVM_SYCL__)
+#if defined(__ACPP__)
+    return "AdaptiveCpp";
+#elif defined(__DPCPP__)
     return "LLVM (Intel DPC++)";
-#elif defined(__LLVM_SYCL_CUDA__)
-    return "LLVM CUDA (Intel DPC++)";
 #elif defined(__TRISYCL__)
     return "triSYCL";
 #else
@@ -182,6 +178,7 @@ private:
 
 class BenchmarkApp {
   BenchmarkArgs args;
+  sycl::queue device_queue;
   std::unordered_set<std::string> benchmark_names;
 
 public:
@@ -196,6 +193,10 @@ public:
   const BenchmarkArgs& getArgs() const { return args; }
 
   bool shouldRunNDRangeKernels() const { return !args.cli.isFlagSet("--no-ndrange-kernels"); }
+
+  bool deviceHasAspect(sycl::aspect asp) const { return device_queue.get_device().has(asp); }
+
+  bool deviceSupportsFP64() const { return deviceHasAspect(sycl::aspect::fp64); }
 
   template <class Benchmark, typename... AdditionalArgs>
   void run(AdditionalArgs&&... additional_args) {

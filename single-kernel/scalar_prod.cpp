@@ -22,33 +22,25 @@ class ScalarProdGatherKernel;
 template <typename T, bool Use_ndrange = true>
 class ScalarProdBench {
 protected:
-  size_t num_iters;
-
   std::vector<T> input1;
   std::vector<T> input2;
   std::vector<T> output;
-  size_t size;
-  size_t local_size;
-  BenchmarkArgs& args;
+  BenchmarkArgs args;
 
   PrefetchedBuffer<T, 1> input1_buf;
   PrefetchedBuffer<T, 1> input2_buf;
   PrefetchedBuffer<T, 1> output_buf;
 
 public:
-  ScalarProdBench(BenchmarkArgs& _args) : args(_args) {}
+  ScalarProdBench(const BenchmarkArgs& _args) : args(_args) {}
 
   void setup() {
-    num_iters = args.num_iterations;
-    size = args.problem_size;
-    local_size = args.local_size;
-
     // host memory allocation and initialization
-    input1.resize(size);
-    input2.resize(size);
-    output.resize(size);
+    input1.resize(args.problem_size);
+    input2.resize(args.problem_size);
+    output.resize(args.problem_size);
 
-    for(size_t i = 0; i < size; i++) {
+    for(size_t i = 0; i < args.problem_size; i++) {
       input1[i] = static_cast<T>(1);
       input2[i] = static_cast<T>(2);
       output[i] = static_cast<T>(0);
@@ -66,15 +58,23 @@ public:
       // Use discard_write here, otherwise the content of the hostbuffer must first be copied to device
       auto intermediate_product = output_buf.template get_access<s::access::mode::discard_write>(cgh);
 
-      sycl::nd_range<1> ndrange(size, local_size);
+      if(Use_ndrange) {
+        sycl::nd_range<1> ndrange(args.problem_size, args.local_size);
 
-      cgh.parallel_for<class ScalarProdKernel<T, Use_ndrange>>(
-          ndrange, [=, num_iters = num_iters](sycl::nd_item<1> item) {
-            for(size_t i = 0; i < num_iters; i++) {
-              size_t gid = item.get_global_linear_id();
-              intermediate_product[gid] = in1[gid] * in2[gid];
-            }
-          });
+        cgh.parallel_for<class ScalarProdKernel<T, Use_ndrange>>(ndrange, [=](sycl::nd_item<1> item) {
+          size_t gid = item.get_global_linear_id();
+          intermediate_product[gid] = in1[gid] * in2[gid];
+        });
+      } else {
+        cgh.parallel_for_work_group<class ScalarProdKernelHierarchical<T, Use_ndrange>>(
+            sycl::range<1>{args.problem_size / args.local_size}, sycl::range<1>{args.local_size},
+            [=](sycl::group<1> grp) {
+              grp.parallel_for_work_item([&](sycl::h_item<1> idx) {
+                size_t gid = idx.get_global_id(0);
+                intermediate_product[gid] = in1[gid] * in2[gid];
+              });
+            });
+      }
     }));
 
 
@@ -92,51 +92,83 @@ public:
 
         // local memory for reduction
         auto local_mem = s::local_accessor<T, 1>{s::range<1>(wgroup_size), cgh};
+
         sycl::nd_range<1> ndrange(n_wgroups * wgroup_size, wgroup_size);
 
-        //   if(Use_ndrange) {
-        cgh.parallel_for<class ScalarProdReduction<T, Use_ndrange>>(
-            ndrange, [=, num_iters = num_iters](sycl::nd_item<1> item) {
-              size_t gid = item.get_global_linear_id();
-              size_t lid = item.get_local_linear_id();
+        if(Use_ndrange) {
+          cgh.parallel_for<class ScalarProdReduction<T, Use_ndrange>>(ndrange, [=](sycl::nd_item<1> item) {
+            size_t gid = item.get_global_linear_id();
+            size_t lid = item.get_local_linear_id();
 
-              // initialize local memory to 0
-              local_mem[lid] = 0;
+            // initialize local memory to 0
+            local_mem[lid] = 0;
 
-              for(size_t iter = 0; iter < num_iters; iter++) {
-                for(int i = 0; i < elements_per_thread; ++i) {
-                  int input_element = gid + i * n_wgroups * wgroup_size;
+            for(int i = 0; i < elements_per_thread; ++i) {
+              int input_element = gid + i * n_wgroups * wgroup_size;
 
-                  if(input_element < array_size)
-                    local_mem[lid] += global_mem[input_element];
-                }
+              if(input_element < array_size)
+                local_mem[lid] += global_mem[input_element];
+            }
 
-                item.barrier(s::access::fence_space::local_space);
+            sycl::group_barrier(item.get_group());
 
-                for(size_t stride = wgroup_size / elements_per_thread; stride >= 1; stride /= elements_per_thread) {
-                  if(lid < stride) {
-                    for(int i = 0; i < elements_per_thread - 1; ++i) {
-                      local_mem[lid] += local_mem[lid + stride + i];
-                    }
-                  }
-                  item.barrier(s::access::fence_space::local_space);
-                }
-
-                // Only one work-item per work group writes to global memory
-                if(lid == 0) {
-                  global_mem[item.get_global_id()] = local_mem[0];
+            for(size_t stride = wgroup_size / elements_per_thread; stride >= 1; stride /= elements_per_thread) {
+              if(lid < stride) {
+                for(int i = 0; i < elements_per_thread - 1; ++i) {
+                  local_mem[lid] += local_mem[lid + stride + i];
                 }
               }
-            });
+              sycl::group_barrier(item.get_group());
+            }
+
+            // Only one work-item per work group writes to global memory
+            if(lid == 0) {
+              global_mem[item.get_global_id()] = local_mem[0];
+            }
+          });
+        } else {
+          cgh.parallel_for_work_group<class ScalarProdReductionHierarchical<T, Use_ndrange>>(
+              sycl::range<1>{n_wgroups}, sycl::range<1>{wgroup_size}, [=](sycl::group<1> grp) {
+                grp.parallel_for_work_item([&](sycl::h_item<1> idx) {
+                  const size_t gid = idx.get_global_id(0);
+                  const size_t lid = idx.get_local_id(0);
+
+                  // initialize local memory to 0
+                  local_mem[lid] = 0;
+
+                  for(int i = 0; i < elements_per_thread; ++i) {
+                    int input_element = gid + i * n_wgroups * wgroup_size;
+
+                    if(input_element < array_size)
+                      local_mem[lid] += global_mem[input_element];
+                  }
+                });
+
+                for(size_t stride = wgroup_size / elements_per_thread; stride >= 1; stride /= elements_per_thread) {
+                  grp.parallel_for_work_item([&](sycl::h_item<1> idx) {
+                    const size_t lid = idx.get_local_id(0);
+
+                    if(lid < stride) {
+                      for(int i = 0; i < elements_per_thread - 1; ++i) {
+                        local_mem[lid] += local_mem[lid + stride + i];
+                      }
+                    }
+                  });
+                }
+                grp.parallel_for_work_item([&](sycl::h_item<1> idx) {
+                  const size_t lid = idx.get_local_id(0);
+                  if(lid == 0)
+                    global_mem[grp.get_group_id(0) * grp.get_local_range(0)] = local_mem[0];
+                });
+              });
+        }
       }));
 
       events.push_back(args.device_queue.submit([&](sycl::handler& cgh) {
         auto global_mem = output_buf.template get_access<s::access::mode::read_write>(cgh);
 
         cgh.parallel_for<ScalarProdGatherKernel<T, Use_ndrange>>(
-            sycl::range<1>{n_wgroups}, [=, num_iters = num_iters](sycl::id<1> idx) {
-              for(int i = 0; i < num_iters; i++) global_mem[idx] = global_mem[idx * wgroup_size];
-            });
+            sycl::range<1>{n_wgroups}, [=](sycl::id<1> idx) { global_mem[idx] = global_mem[idx * wgroup_size]; });
       }));
       array_size = n_wgroups;
     }
@@ -144,16 +176,16 @@ public:
 
   bool verify(VerificationSetting& ver) {
     bool pass = true;
-    // auto expected = static_cast<T>(0);
+    auto expected = static_cast<T>(0);
 
-    // auto output_acc = output_buf.get_host_access();
+    auto output_acc = output_buf.get_host_access();
 
-    // for(size_t i = 0; i < args.problem_size; i++) {
-    //   expected += input1[i] * input2[i];
-    // }
+    for(size_t i = 0; i < args.problem_size; i++) {
+      expected += input1[i] * input2[i];
+    }
 
-    // // std::cout << "Scalar product on CPU =" << expected << std::endl;
-    // // std::cout << "Scalar product on Device =" << output[0] << std::endl;
+    // std::cout << "Scalar product on CPU =" << expected << std::endl;
+    // std::cout << "Scalar product on Device =" << output[0] << std::endl;
 
     // // Todo: update to type-specific test (Template specialization?)
     // const auto tolerance = 0.00001f;
@@ -175,17 +207,22 @@ public:
 
 int main(int argc, char** argv) {
   BenchmarkApp app(argc, argv);
-  // if(app.shouldRunNDRangeKernels()) {
-  //   app.run<ScalarProdBench<int, true>>();
-  //   app.run<ScalarProdBench<long long, true>>();
-  //   app.run<ScalarProdBench<float, true>>();
-  //   app.run<ScalarProdBench<double, true>>();
-  // }
+  if(app.shouldRunNDRangeKernels()) {
+    app.run<ScalarProdBench<int, true>>();
+    app.run<ScalarProdBench<long long, true>>();
+    app.run<ScalarProdBench<float, true>>();
+    if constexpr(SYCL_BENCH_ENABLE_FP64_BENCHMARKS) {
+      if(app.deviceSupportsFP64())
+        app.run<ScalarProdBench<double, true>>();
+    }
+  }
 
-  app.run<ScalarProdBench<float, true>>();
-  // app.run<ScalarProdBench<long long, false>>();
-  // app.run<ScalarProdBench<float, false>>();
-  // app.run<ScalarProdBench<double, false>>();
-
+  app.run<ScalarProdBench<int, false>>();
+  app.run<ScalarProdBench<long long, false>>();
+  app.run<ScalarProdBench<float, false>>();
+  if constexpr(SYCL_BENCH_ENABLE_FP64_BENCHMARKS) {
+    if(app.deviceSupportsFP64())
+      app.run<ScalarProdBench<double, false>>();
+  }
   return 0;
 }

@@ -13,7 +13,6 @@ class VecAddKernel;
 template <typename T>
 class VecAddBench {
 protected:
-  size_t num_iters;
   std::vector<T> input1;
   std::vector<T> input2;
   std::vector<T> output;
@@ -24,7 +23,7 @@ protected:
   PrefetchedBuffer<T, 1> output_buf;
 
 public:
-  VecAddBench(BenchmarkArgs& _args) : args(_args) {}
+  VecAddBench(const BenchmarkArgs& _args) : args(_args) {}
 
   void setup() {
     num_iters = args.num_iterations;
@@ -53,11 +52,7 @@ public:
       auto out = output_buf.template get_access<s::access::mode::discard_write>(cgh);
       sycl::range<1> ndrange{args.problem_size};
 
-      cgh.parallel_for<class VecAddKernel<T>>(ndrange, [=, num_iters = num_iters](sycl::id<1> gid) {
-        for(size_t i = 0; i < num_iters; i++) {
-          out[gid] = in1[gid] + in2[gid];
-        }
-      });
+      cgh.parallel_for<class VecAddKernel<T>>(ndrange, [=](sycl::id<1> gid) { out[gid] = in1[gid] + in2[gid]; });
     }));
   }
 
@@ -89,6 +84,9 @@ int main(int argc, char** argv) {
   app.run<VecAddBench<int>>();
   app.run<VecAddBench<long long>>();
   app.run<VecAddBench<float>>();
-  app.run<VecAddBench<double>>();
+  if constexpr(SYCL_BENCH_ENABLE_FP64_BENCHMARKS) {
+    if(app.deviceSupportsFP64())
+      app.run<VecAddBench<double>>();
+  }
   return 0;
 }
