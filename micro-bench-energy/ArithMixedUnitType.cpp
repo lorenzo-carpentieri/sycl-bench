@@ -115,10 +115,10 @@ public:
             }
 #pragma unroll
             for(int i = 0; i < SpecPerc; i++) {
-              raf = log(rbf);
-              rbf = cos(rcf);
-              rcf = log(rdf);
-              rdf = sin(raf);
+              raf = logf(rbf);
+              rbf = cosf(rcf);
+              rcf = logf(rdf);
+              rdf = sinf(raf);
             }
           }
 

@@ -70,7 +70,7 @@ public:
                 for(int i = 0; i < DivPerc; i++) c1_acc[gidx][gidy] /= b_acc[gidx + x][gidy + y];
 
 #pragma unroll
-                for(int i = 0; i < SpecPerc; i++) c1_acc[gidx][gidy] = log(c1_acc[gidx][gidy]);
+                for(int i = 0; i < SpecPerc; i++) c1_acc[gidx][gidy] = logf(c1_acc[gidx][gidy]);
               }
         }
       }); // end parallel for

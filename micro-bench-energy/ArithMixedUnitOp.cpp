@@ -91,10 +91,10 @@ public:
             }
 #pragma unroll
             for(int i = 0; i < SpecPerc; i++) {
-              ra = log(rb);
-              rb = cos(rc);
-              rc = log(rd);
-              rd = sin(ra);
+              ra = logf(rb);
+              rb = cosf(rc);
+              rc = logf(rd);
+              rd = sinf(ra);
             }
           }
 
