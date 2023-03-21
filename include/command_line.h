@@ -210,9 +210,6 @@ private:
       return {};
     };
 
-
-    return selected_queue(CUDASelector, queueProperties);
-#endif
 #ifndef __ENABLED_SYNERGY
     if(device_type == "cpu") {
       return sycl::queue{sycl::cpu_selector_v, getQueueProperties()};
@@ -224,17 +221,16 @@ private:
       throw std::invalid_argument{"unknown device type: " + device_type};
     }
 #else
-if(device_type == "gpu") {
-  return selected_queue{queueProperties};
-} else if(device_type == "default") {
-  return selected_queue{queueProperties};
-} else {
-  throw std::invalid_argument{"unknown device type: " + device_type};
-}
+    if(device_type == "gpu") {
+      return selected_queue{getQueueProperties()};
+    } else if(device_type == "default") {
+      return selected_queue{getQueueProperties()};
+    } else {
+      throw std::invalid_argument{"unknown device type: " + device_type};
+    }
 #endif
   }
 
   CommandLine cli_parser;
 };
-
 #endif

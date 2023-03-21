@@ -116,8 +116,6 @@ public:
           }
 
           energy_metrics.addEnergyResult("kernel-energy", total_energy);
-
-
 #endif
         }
 
