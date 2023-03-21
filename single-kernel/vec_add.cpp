@@ -13,6 +13,7 @@ class VecAddKernel;
 template <typename T>
 class VecAddBench {
 protected:
+  size_t num_iters;
   std::vector<T> input1;
   std::vector<T> input2;
   std::vector<T> output;
@@ -52,7 +53,11 @@ public:
       auto out = output_buf.template get_access<s::access::mode::discard_write>(cgh);
       sycl::range<1> ndrange{args.problem_size};
 
-      cgh.parallel_for<class VecAddKernel<T>>(ndrange, [=](sycl::id<1> gid) { out[gid] = in1[gid] + in2[gid]; });
+      cgh.parallel_for<class VecAddKernel<T>>(ndrange, [=, num_iters = num_iters](sycl::id<1> gid) {
+        for(size_t i = 0; i < num_iters; i++) {
+          out[gid] = in1[gid] + in2[gid];
+        }
+      });
     }));
   }
 

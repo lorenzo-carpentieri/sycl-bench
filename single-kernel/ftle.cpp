@@ -182,7 +182,7 @@ public:
                 eigenvalues = eigenvalues + float4eigenvalues(cauchySymm);
                 float maxEigenvalue = s::max(eigenvalues.x(), eigenvalues.y());
 
-                output_acc[gid] = 1.0 / s::fabs(advectionTime_) * s::log(s::sqrt(maxEigenvalue));
+                output_acc[gid] = 1 / s::fabs(advectionTime_) * s::log(s::sqrt(maxEigenvalue));
               }
             }
           });

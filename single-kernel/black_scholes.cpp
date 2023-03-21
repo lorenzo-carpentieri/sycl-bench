@@ -35,7 +35,6 @@ class BlackScholesKernel; // kernel forward declaration
   A Sobel filter with a convolution matrix 3x3.
   Input and output are two-dimensional buffers of floats.
  */
-template <typename T>
 class BlackScholes {
 protected:
   size_t w, h; // size of the input picture

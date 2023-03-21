@@ -111,7 +111,6 @@ set(benchmarks
   single-kernel/mol_dyn.cpp
   single-kernel/black_scholes.cpp
   single-kernel/bit_compression.cpp
-  single-kernel/aes_encrypt.cpp
   single-kernel/geometric_mean.cpp
   single-kernel/flowmap.cpp
   single-kernel/ftle.cpp
@@ -121,7 +120,6 @@ set(benchmarks
   single-kernel/sinewave.cpp
   single-kernel/perlin.cpp
   single-kernel/matrix_mul.cpp
-  single-kernel/bloom_filter.cpp
 
   usm/matrix_mul_usm.cpp
   pattern/segmentedreduction.cpp

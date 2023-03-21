@@ -12,6 +12,8 @@ class VecReduceKernel;
 template <typename T>
 class LinearRegressionCoeffBench {
 protected:
+  size_t num_iters;
+
   std::vector<T> input1;
   std::vector<T> input2;
   std::vector<T> output;
@@ -31,6 +33,8 @@ public:
   LinearRegressionCoeffBench(const BenchmarkArgs& _args) : args(_args) {}
 
   void setup() {
+    num_iters = args.num_iterations;
+
     // host memory allocation and initialization
     input1.resize(args.problem_size);
     input2.resize(args.problem_size);
@@ -120,26 +124,28 @@ public:
   }
 
   void run(std::vector<sycl::event>& events) {
-    vec_product(events, input1_buf.get(), input2_buf.get(), output_buf.get());
+    for(size_t i = 0; i < num_iters; i++) {
+      vec_product(events, input1_buf.get(), input2_buf.get(), output_buf.get());
 
-    T ss_xy = reduce(events, output_buf.get());
+      T ss_xy = reduce(events, output_buf.get());
 
-    vec_product(events, input1_buf.get(), input1_buf.get(), output_buf.get());
+      vec_product(events, input1_buf.get(), input1_buf.get(), output_buf.get());
 
-    T ss_xx = reduce(events, output_buf.get());
+      T ss_xx = reduce(events, output_buf.get());
 
-    T mean_x = reduce(events, input1_buf.get()) / args.problem_size;
-    T mean_y = reduce(events, input2_buf.get()) / args.problem_size;
+      T mean_x = reduce(events, input1_buf.get()) / args.problem_size;
+      T mean_y = reduce(events, input2_buf.get()) / args.problem_size;
 
-    ss_xy = ss_xy - mean_x * mean_y;
-    ss_xx = ss_xx - mean_x * mean_x;
+      ss_xy = ss_xy - mean_x * mean_y;
+      ss_xx = ss_xx - mean_x * mean_x;
 
-    coeff_b1 = ss_xy / ss_xx;
-    coeff_b0 = mean_y - coeff_b1 * mean_x;
+      coeff_b1 = ss_xy / ss_xx;
+      coeff_b0 = mean_y - coeff_b1 * mean_x;
 
-    // std::cout << "ss_xy = " << ss_xy << "ss_xx = " << ss_xx << std::endl;
-    // std::cout << "Mean_x = " << mean_x << "Mean_y = " << mean_y << std::endl;
-    // std::cout << "Coeff_b1 = " << coeff_b1 << ", " << "Coeff_b0 = " << coeff_b0 << std::endl;
+      // std::cout << "ss_xy = " << ss_xy << "ss_xx = " << ss_xx << std::endl;
+      // std::cout << "Mean_x = " << mean_x << "Mean_y = " << mean_y << std::endl;
+      // std::cout << "Coeff_b1 = " << coeff_b1 << ", " << "Coeff_b0 = " << coeff_b0 << std::endl;
+    }
   }
 
   bool verify(VerificationSetting& ver) {
