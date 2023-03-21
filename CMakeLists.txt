@@ -27,7 +27,7 @@ include_directories(${CMAKE_SOURCE_DIR}/include-bloom-filter)
 include_directories(${CMAKE_SOURCE_DIR}/polybench/common)
 
 set(SYCL_IMPL "" CACHE STRING "Select SYCL implementation")
-set_property(CACHE SYCL_IMPL PROPERTY STRINGS "dpcpp" "AdaptiveCpp")
+set_property(CACHE SYCL_IMPL PROPERTY STRINGS "dpcpp" "AdaptiveCpp" "triSYCL")
 option(ENABLED_SYNERGY "Enable SYnergy support" OFF)
 option(ENABLED_TIME_EVENT_PROFILING "Enable time profiling with sycl event" OFF)
 
@@ -36,7 +36,7 @@ set(supported_implementations
   dpcpp
   triSYCL
 )# SYCL Bench variables
-option(SYCL_BENCH_ENABLE_FP64_BENCHMARKS CACHE "Enable FP64 benchmarks [ON]")
+option(SYCL_BENCH_ENABLE_FP64_BENCHMARKS CACHE "Enable FP64 benchmarks")
 
 
 
@@ -100,53 +100,53 @@ set(benchmarks
   micro-bench-energy/LocalMemory.cpp
   micro-bench-energy/Stencil.cpp
 
-  # single-kernel/median.cpp
-  # single-kernel/sobel.cpp
-  # single-kernel/sobel5.cpp
-  # single-kernel/sobel7.cpp
-  # single-kernel/vec_add.cpp
-  # single-kernel/lin_reg_error.cpp
-  # single-kernel/lin_reg_coeff.cpp
-  # single-kernel/kmeans.cpp
-  # single-kernel/mol_dyn.cpp
-  # single-kernel/black_scholes.cpp
-  # single-kernel/bit_compression.cpp
-  # single-kernel/aes_encrypt.cpp
-  # single-kernel/geometric_mean.cpp
-  # single-kernel/flowmap.cpp
-  # single-kernel/ftle.cpp
-  # single-kernel/knn.cpp
-  # single-kernel/merse_twister.cpp
-  # single-kernel/spmv.cpp
-  # single-kernel/sinewave.cpp
-  # single-kernel/perlin.cpp
-  # single-kernel/matrix_mul.cpp
-  # single-kernel/bloom_filter.cpp
+  single-kernel/median.cpp
+  single-kernel/sobel.cpp
+  single-kernel/sobel5.cpp
+  single-kernel/sobel7.cpp
+  single-kernel/vec_add.cpp
+  single-kernel/lin_reg_error.cpp
+  single-kernel/lin_reg_coeff.cpp
+  single-kernel/kmeans.cpp
+  single-kernel/mol_dyn.cpp
+  single-kernel/black_scholes.cpp
+  single-kernel/bit_compression.cpp
+  single-kernel/aes_encrypt.cpp
+  single-kernel/geometric_mean.cpp
+  single-kernel/flowmap.cpp
+  single-kernel/ftle.cpp
+  single-kernel/knn.cpp
+  single-kernel/merse_twister.cpp
+  single-kernel/spmv.cpp
+  single-kernel/sinewave.cpp
+  single-kernel/perlin.cpp
+  single-kernel/matrix_mul.cpp
+  single-kernel/bloom_filter.cpp
 
-  # usm/matrix_mul_usm.cpp
-  # pattern/segmentedreduction.cpp
-  # pattern/reduction.cpp
-  # runtime/blocked_transform.cpp
-  # runtime/matmulchain.cpp
+  usm/matrix_mul_usm.cpp
+  pattern/segmentedreduction.cpp
+  pattern/reduction.cpp
+  runtime/blocked_transform.cpp
+  runtime/matmulchain.cpp
 
-  # polybench/2DConvolution.cpp
-  # polybench/2mm.cpp
-  # polybench/3DConvolution.cpp
-  # polybench/3mm.cpp
-  # polybench/atax.cpp
-  # polybench/bicg.cpp
-  # polybench/correlation.cpp
-  # polybench/covariance.cpp
-  # polybench/fdtd2d.cpp
-  # polybench/gemm.cpp
-  # polybench/gesummv.cpp
-  # polybench/gramschmidt.cpp
-  # polybench/mvt.cpp
-  # polybench/syr2k.cpp
-  # polybench/syrk.cpp
+  polybench/2DConvolution.cpp
+  polybench/2mm.cpp
+  polybench/3DConvolution.cpp
+  polybench/3mm.cpp
+  polybench/atax.cpp
+  polybench/bicg.cpp
+  polybench/correlation.cpp
+  polybench/covariance.cpp
+  polybench/fdtd2d.cpp
+  polybench/gemm.cpp
+  polybench/gesummv.cpp
+  polybench/gramschmidt.cpp
+  polybench/mvt.cpp
+  polybench/syr2k.cpp
+  polybench/syrk.cpp
 
-  # # compiletime/compiletime.cpp
-  # spec_constants/spec_constant_convolution.cpp
+  # compiletime/compiletime.cpp
+  spec_constants/spec_constant_convolution.cpp
 )
 
 # Setting variables
