@@ -36,7 +36,7 @@ set(supported_implementations
   dpcpp
   triSYCL
 )# SYCL Bench variables
-option(SYCL_BENCH_ENABLE_FP64_BENCHMARKS CACHE "Enable FP64 benchmarks")
+option(SYCL_BENCH_ENABLE_FP64_BENCHMARKS "Enable FP64 benchmarks" ON)
 
 
 
