@@ -188,6 +188,10 @@ int main(int argc, char** argv)
   runAccessVariants<int>(app);
   runAccessVariants<long long>(app);
   runAccessVariants<float>(app);
-  runAccessVariants<double>(app);
+  
+  if constexpr (SYCL_BENCH_ENABLE_FP64_BENCHMARKS) {
+    runAccessVariants<double>(app);
+  }
+
   return 0;
 }
