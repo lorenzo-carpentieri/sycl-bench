@@ -4,7 +4,7 @@ import os
 import sys
 import pandas as pd
 
-if len(sys.argv) != 4:
+if len(sys.argv) < 4:
     print("Insert path to sycl-bench folder as command line argument")
     exit(0)
 
@@ -14,6 +14,11 @@ merged_csv_dir=sys.argv[3]
 
 if not os.path.exists(merged_csv_dir):
     os.makedirs(merged_csv_dir)
+
+norm=False
+if len(sys.argv) == 5 and sys.argv[4] == "norm":
+    norm=True
+
 
 sycl_bench_files={}
 features_files={}
@@ -49,6 +54,10 @@ for kernel in sycl_bench_files:
         df_kernel = pd.concat([df_kernel, df_merged], ignore_index=True)
 
     df_all = pd.concat([df_all, df_kernel], ignore_index=True)
+    if norm:
+        core_freq=set(df_kernel["core-freq"])
+        df_kernel["core-freq"] = df_kernel["core-freq"].apply(lambda x: (x - min(core_freq))/(max(core_freq)-min(core_freq)))
+
     df_kernel.to_csv(merged_csv_dir+"/merged_"+kernel+".csv" , index=False, float_format='%.8f')
 
 # df_all.to_csv(merged_csv_dir+"/merged_all.csv" , index=False, float_format='%.8f')

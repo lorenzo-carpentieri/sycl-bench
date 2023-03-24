@@ -81,7 +81,6 @@ for file in os.listdir(kernel_dir):
         color_bar=plt.colorbar(sc)
         color_bar.set_label("Core Frequency", size=axis_label_size)
         color_bar.ax.tick_params(labelsize=ticks_size)
-        plt.legend(fontsize=legend_size)
        
         # Compute the pareto set point and print on the plot
         # Creaete a data frame with energy and speedup
@@ -92,6 +91,12 @@ for file in os.listdir(kernel_dir):
         
         np_array = pset.to_numpy()
         pset_size = len(pset["speedup"])
+        
+        cur_xlim_left, cur_xlim_right = plt.xlim()
+        cur_xlim_bottom, cur_ylim_top = plt.ylim()
+        x1, y1 = [cur_xlim_left, np_array[0][0]], [np_array[0][1], np_array[0][1]]
+        plt.plot(x1, y1, color="red", linewidth=2.5, label="Pareto Front")
+
         for i in range(pset_size):
             if not (i == pset_size-1):
                 current_x = np_array[i][0]
@@ -101,7 +106,15 @@ for file in os.listdir(kernel_dir):
                 x1, y1 = [current_x, current_x], [current_y, next_y]
                 x2, y2 = [current_x, next_x], [next_y, next_y]
                 plt.plot(x1, y1, x2, y2, color="red", linewidth=2.5)
-        
+
+        last_point = np_array[pset_size-1]
+        x1, y1 = [last_point[0], last_point[0]], [last_point[1], cur_ylim_top]
+        plt.plot(x1, y1, color="red", linewidth=2.5)
+
+
+        plt.xlim(left=cur_xlim_left)
+        plt.ylim(top=cur_ylim_top)
+        plt.legend(fontsize=legend_size)
         plt.savefig(output_dir+"/"+kernel_name+".pdf", bbox_inches="tight")
 
         if kernel_name == "BlackScholes":
@@ -111,15 +124,22 @@ for file in os.listdir(kernel_dir):
             for index, val in enumerate([1, 5, 10, 20]):
                 perc = val / 100
                 energy_saving = (baseline_energy - (baseline_energy * perc)) / baseline_energy
-                hlines.append(plt.axhline(energy_saving, label="Energy Saving "+str(val)+"%", color="green", linestyle=line_style[index]))
+                hlines.append(plt.axhline(energy_saving, label="Energy Saving "+str(val)+"%", color="tab:blue", linestyle=line_style[index]))
                 plt.legend(fontsize=legend_size)
+
+            color_bar.remove()
+            color_bar.set_label("", size=axis_label_size)
             plt.savefig(output_dir+"/"+kernel_name+"_es.pdf", bbox_inches="tight")
 
             for line in hlines: line.remove()
             for index, val in enumerate([1, 5, 10, 20]):
                 perc = val / 100
                 perf_loss = baseline_time / (baseline_time + (baseline_time * perc))
-                plt.axvline(perf_loss, label="Performance Loss "+str(val)+"%", color="darkorange", linestyle=line_style[index])
+                plt.axvline(perf_loss, label="Performance Loss "+str(val)+"%", color="tab:orange", linestyle=line_style[index])
                 plt.legend(fontsize=legend_size)
+                
+            color_bar = plt.colorbar(sc)
+            color_bar.set_label("Core Frequency", size=axis_label_size)
+            plt.ylabel("")
             plt.savefig(output_dir+"/"+kernel_name+"_pl.pdf", bbox_inches="tight")
 

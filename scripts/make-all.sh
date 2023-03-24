@@ -24,7 +24,7 @@ echo "Computing energy metrics..."
 echo "Merging with features..."
 merge_script="./merge_${type}.py"
 $merge_script $folder/parsed-edp/ $folder/features-count/ $folder/merged-count/
-$merge_script $folder/parsed-edp/ $folder/features-normalized/ $folder/merged-normalized/
+$merge_script $folder/parsed-edp/ $folder/features-normalized/ $folder/merged-normalized/ norm
 
 echo "Generating multi-objective plots..."
 ./multi_obj_plot.py $folder/merged-count/ $folder/plots-multiobj/
