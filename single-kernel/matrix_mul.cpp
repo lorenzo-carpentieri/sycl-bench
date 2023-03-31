@@ -11,6 +11,7 @@ template<class T>
 class matrixMul{
     private:
         int size;
+        int num_iters;
         const s::accessor<T,1,s::access_mode::read> in_A;
         const s::accessor<T,1,s::access_mode::read> in_B;
         s::accessor<T,1,s::access_mode::read_write> out;
@@ -18,6 +19,7 @@ class matrixMul{
     public: 
         matrixMul(
             int size, 
+            int num_iters,
             const s::accessor<T, 1, s::access_mode::read> in_A,
             const s::accessor<T, 1, s::access_mode::read> in_B,
             s::accessor<T, 1, s::access_mode::read_write> out   
@@ -31,8 +33,9 @@ class matrixMul{
         void operator()(s::id<2> gid)const {
             int gidx = gid.get(0);
             int gidy = gid.get(1);
-            for(int k = 0; k < size; k++)
-                out[gidx*size+gidy] += in_A[gidx*size+k] * in_B[k*size+gidy];
+            for(int iter=0; iter< num_iters; iter++)
+              for(int k = 0; k < size; k++)
+                  out[gidx*size+gidy] += in_A[gidx*size+k] * in_B[k*size+gidy];
         }
 };
 
@@ -76,7 +79,7 @@ public:
             auto acc_a = a_buf.template get_access<s::access_mode::read>(cgh);
             auto acc_b = b_buf.template get_access<s::access_mode::read>(cgh);
             auto acc_c = c_buf.template get_access<s::access_mode::read_write>(cgh);
-            cgh.parallel_for(s::range<2>{size, size}, matrixMul<T>(size, acc_a, acc_b, acc_c));//end parallel for
+            cgh.parallel_for(s::range<2>{size, size}, matrixMul<T>(size,num_iters, acc_a, acc_b, acc_c));//end parallel for
         })
     );// end events.push back
     
