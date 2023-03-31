@@ -9,9 +9,7 @@
 
 using namespace sycl;
 
-size_t SIZE_BODY;
-size_t BLOCK_SIZE;
-int NUM_TILES;
+
 
 sycl::float3 bodyBodyInteraction(sycl::float4 bi, sycl::float4 bj, sycl::float3 ai)
 {
@@ -35,10 +33,10 @@ sycl::float3 bodyBodyInteraction(sycl::float4 bi, sycl::float4 bj, sycl::float3 
     return ai;
 }
 
-sycl::float3 tile_calculation(sycl::float4 myPosition, sycl::float3 accel, local_accessor<sycl::float4, 1> sh_position)
+sycl::float3 tile_calculation(sycl::float4 myPosition, sycl::float3 accel, local_accessor<sycl::float4, 1> sh_position, size_t local_size)
 {
 
-    for (int i = 0; i < BLOCK_SIZE; i++) {
+    for (size_t i = 0; i < local_size; i++) {
         accel = bodyBodyInteraction(myPosition, sh_position[i], accel);
     }
     return accel;
@@ -53,6 +51,8 @@ class calculate_forces{
         sycl::accessor<sycl::float4, 1, access_mode::read_write> out_pos;
         sycl::accessor<sycl::float4, 1, access_mode::read_write> out_vel;
         sycl::local_accessor<sycl::float4, 1> sh_position;
+        size_t size;
+        size_t local_size;
     
     public:
         calculate_forces(
@@ -60,16 +60,21 @@ class calculate_forces{
             const accessor<sycl::float4, 1,access_mode::read> in_vel,
             accessor<sycl::float4, 1, access_mode::read_write> out_pos,
             accessor<sycl::float4, 1, access_mode::read_write> out_vel,
-            sycl::local_accessor<sycl::float4, 1> sh_position
+            sycl::local_accessor<sycl::float4, 1> sh_position,
+            size_t size,
+            size_t local_size
         )
         :
             in_pos(in_pos),
             in_vel(in_vel),
             out_pos(out_pos),
             out_vel(out_vel),
-            sh_position(sh_position){}
+            sh_position(sh_position),
+            size(size),
+            local_size(local_size){}
 
         void operator()(sycl::nd_item<1> it) const{
+            int NUM_TILES = (size + local_size - 1) / local_size;
             const auto &group = it.get_group();
             int gtid = it.get_global_id().get(0);
             int local_id = it.get_local_id().get(0);
@@ -81,12 +86,12 @@ class calculate_forces{
 
     
 
-            for (int i = 0, tile = 0; i < NUM_TILES; i++, tile++) {
-                int idx = tile * BLOCK_SIZE + local_id;
+            for (size_t i = 0, tile = 0; i < NUM_TILES; i++, tile++) {
+                int idx = tile * local_size + local_id;
                 sh_position[local_id] = in_pos[idx];
                 sycl::group_barrier(group);
 
-                acc = tile_calculation(myPosition, acc, sh_position);
+                acc = tile_calculation(myPosition, acc, sh_position, local_size);
 
                 sycl::group_barrier(group);
             }
@@ -129,6 +134,7 @@ protected:
   size_t w, h; // size of the input picture
   size_t size; // user-defined size (input and output will be size x size)
   size_t local_size;
+  int num_tiles;
   BenchmarkArgs& args;
 
 
@@ -143,19 +149,17 @@ public:
   void setup() {
     size = args.problem_size; // input size defined by the user
     local_size = args.local_size;
-    SIZE_BODY = size;
-    BLOCK_SIZE = local_size;
-    NUM_TILES = (SIZE_BODY + BLOCK_SIZE - 1) / BLOCK_SIZE;
+
     num_iters = args.num_iterations;
-    // size is SIZE_BODY
-    pos.resize(SIZE_BODY);
-    vel.resize(SIZE_BODY);
-    out_pos.resize(SIZE_BODY);
-    out_vel.resize(SIZE_BODY);
+    // size is size
+    pos.resize(size);
+    vel.resize(size);
+    out_pos.resize(size);
+    out_vel.resize(size);
 
     // Initialization bodies pos and vel
     srand(10);
-    for(int i = 0; i < SIZE_BODY; i++){
+    for(int i = 0; i < size; i++){
         // pos
         pos[i][0]= 2.0f * (rand() / (float)RAND_MAX) - 1.0f;
         pos[i][1]= 2.0f * (rand() / (float)RAND_MAX) - 1.0f;
@@ -168,10 +172,10 @@ public:
         vel[i][2]= 2.0f * (rand() / (float)RAND_MAX) - 1.0f;
         vel[i][3]= 0;
     }
-    pos_buff.initialize(args.device_queue, pos.data(), s::range<1>(SIZE_BODY));
-    vel_buff.initialize(args.device_queue, vel.data(), s::range<1>(SIZE_BODY));
-    out_pos_buff.initialize(args.device_queue, pos.data(), s::range<1>(SIZE_BODY));
-    out_vel_buff.initialize(args.device_queue, vel.data(), s::range<1>(SIZE_BODY));
+    pos_buff.initialize(args.device_queue, pos.data(), s::range<1>(size));
+    vel_buff.initialize(args.device_queue, vel.data(), s::range<1>(size));
+    out_pos_buff.initialize(args.device_queue, pos.data(), s::range<1>(size));
+    out_vel_buff.initialize(args.device_queue, vel.data(), s::range<1>(size));
   }
 
   void run(std::vector<sycl::event>& events) {
@@ -180,10 +184,10 @@ public:
         const s::accessor in_vel = vel_buff.get_access<sycl::access::mode::read>(cgh);
         s::accessor out_pos = out_pos_buff.get_access<sycl::access::mode::read_write>(cgh);
         s::accessor out_vel = out_vel_buff.get_access<sycl::access::mode::read_write>(cgh);
-        s::local_accessor<sycl::float4,1> sh_position{sycl::range<1>{BLOCK_SIZE},cgh};
+        s::local_accessor<sycl::float4,1> sh_position{sycl::range<1>{local_size},cgh};
 
-        sycl::range<1> block{BLOCK_SIZE};
-        sycl::range<1> grid{SIZE_BODY};
+        sycl::range<1> block{local_size};
+        sycl::range<1> grid{size};
         sycl::nd_range<1> ndrange{grid, block};
 
         cgh.parallel_for<class NbodyBenchKernel>(
@@ -192,7 +196,9 @@ public:
                 in_vel,
                 out_pos,
                 out_vel,
-                sh_position
+                sh_position,
+                size,
+                local_size
             ));
     }));
   }
