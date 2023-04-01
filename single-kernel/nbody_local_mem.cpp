@@ -53,6 +53,7 @@ class calculate_forces{
         sycl::local_accessor<sycl::float4, 1> sh_position;
         size_t size;
         size_t local_size;
+        size_t num_iters;
     
     public:
         calculate_forces(
@@ -62,7 +63,8 @@ class calculate_forces{
             accessor<sycl::float4, 1, access_mode::read_write> out_vel,
             sycl::local_accessor<sycl::float4, 1> sh_position,
             size_t size,
-            size_t local_size
+            size_t local_size,
+            size_t num_iters
         )
         :
             in_pos(in_pos),
@@ -71,7 +73,8 @@ class calculate_forces{
             out_vel(out_vel),
             sh_position(sh_position),
             size(size),
-            local_size(local_size){}
+            local_size(local_size),
+            num_iters(num_iters){}
 
         void operator()(sycl::nd_item<1> it) const{
             int NUM_TILES = (size + local_size - 1) / local_size;
@@ -84,29 +87,30 @@ class calculate_forces{
         
             myPosition = in_pos[gtid];
 
-    
+            for(int iter=0; iter < num_iters; iter++){
 
-            for (size_t i = 0, tile = 0; i < NUM_TILES; i++, tile++) {
-                int idx = tile * local_size + local_id;
-                sh_position[local_id] = in_pos[idx];
-                sycl::group_barrier(group);
+              for (size_t i = 0, tile = 0; i < NUM_TILES; i++, tile++) {
+                  int idx = tile * local_size + local_id;
+                  sh_position[local_id] = in_pos[idx];
+                  sycl::group_barrier(group);
 
-                acc = tile_calculation(myPosition, acc, sh_position, local_size);
+                  acc = tile_calculation(myPosition, acc, sh_position, local_size);
 
-                sycl::group_barrier(group);
+                  sycl::group_barrier(group);
+              }
+              // Save the result in global memory for the integration step.
+              sycl::float4 acc4 = {acc[0], acc[1], acc[2], 0.0f};
+
+              sycl::float4 oldVel;
+              oldVel = in_vel[gtid];
+              // updated position and velocity
+              sycl::float4 newPos = myPosition + oldVel * DELTA_TIME + acc4 * 0.5f * DELTA_TIME * DELTA_TIME;
+              newPos[3] = myPosition[3];
+              sycl::float4 newVel = oldVel + (acc4 * DELTA_TIME);
+              // write to global memory
+              out_pos[gtid] = newPos;
+              out_vel[gtid] = newVel;
             }
-            // Save the result in global memory for the integration step.
-            sycl::float4 acc4 = {acc[0], acc[1], acc[2], 0.0f};
-
-            sycl::float4 oldVel;
-            oldVel = in_vel[gtid];
-            // updated position and velocity
-            sycl::float4 newPos = myPosition + oldVel * DELTA_TIME + acc4 * 0.5f * DELTA_TIME * DELTA_TIME;
-            newPos[3] = myPosition[3];
-            sycl::float4 newVel = oldVel + (acc4 * DELTA_TIME);
-            // write to global memory
-            out_pos[gtid] = newPos;
-            out_vel[gtid] = newVel;
         }
 };
 
@@ -119,10 +123,7 @@ class calculate_forces{
 namespace s = sycl;
 class NbodyBenchKernel; // kernel forward declaration
 
-/*
-  A Sobel filter with a convolution matrix 3x3.
-  Input and output are two-dimensional buffers of floats.
- */
+
 class NbodyBench {
 protected:
   size_t num_iters;
@@ -131,7 +132,6 @@ protected:
   std::vector<sycl::float4> out_pos;
   std::vector<sycl::float4> out_vel;
 
-  size_t w, h; // size of the input picture
   size_t size; // user-defined size (input and output will be size x size)
   size_t local_size;
   int num_tiles;
@@ -198,7 +198,8 @@ public:
                 out_vel,
                 sh_position,
                 size,
-                local_size
+                local_size,
+                num_iters
             ));
     }));
   }
@@ -211,7 +212,7 @@ public:
   }
 
 
-  static std::string getBenchmarkName() { return "BoxBlur"; }
+  static std::string getBenchmarkName() { return "Nbody_local_mem"; }
 
 }; // NbodyBench class
 
