@@ -69,13 +69,12 @@ public:
       sycl::nd_range<1> ndrange(size, local_size);
 
       cgh.parallel_for<class ScalarProdKernel<T, Use_ndrange>>(
-            ndrange, [=, num_iters = num_iters](sycl::nd_item<1> item) {
-              for(size_t i = 0; i < num_iters; i++) {
-                size_t gid = item.get_global_linear_id();
-                intermediate_product[gid] = in1[gid] * in2[gid];
-              }
+          ndrange, [=, num_iters = num_iters](sycl::nd_item<1> item) {
+            for(size_t i = 0; i < num_iters; i++) {
+              size_t gid = item.get_global_linear_id();
+              intermediate_product[gid] = in1[gid] * in2[gid];
+            }
           });
-  
     }));
 
 
@@ -95,49 +94,48 @@ public:
         auto local_mem = s::local_accessor<T, 1>{s::range<1>(wgroup_size), cgh};
         sycl::nd_range<1> ndrange(n_wgroups * wgroup_size, wgroup_size);
 
-      //   if(Use_ndrange) {
-          cgh.parallel_for<class ScalarProdReduction<T, Use_ndrange>>(ndrange, [=, num_iters = num_iters](sycl::nd_item<1> item) {
-            size_t gid = item.get_global_linear_id();
-            size_t lid = item.get_local_linear_id();
+        //   if(Use_ndrange) {
+        cgh.parallel_for<class ScalarProdReduction<T, Use_ndrange>>(
+            ndrange, [=, num_iters = num_iters](sycl::nd_item<1> item) {
+              size_t gid = item.get_global_linear_id();
+              size_t lid = item.get_local_linear_id();
 
-            // initialize local memory to 0
-            local_mem[lid] = 0;
-            
-            for(size_t iter = 0; iter < num_iters; iter++) {
+              // initialize local memory to 0
+              local_mem[lid] = 0;
 
-              for(int i = 0; i < elements_per_thread; ++i) {
-                int input_element = gid + i * n_wgroups * wgroup_size;
+              for(size_t iter = 0; iter < num_iters; iter++) {
+                for(int i = 0; i < elements_per_thread; ++i) {
+                  int input_element = gid + i * n_wgroups * wgroup_size;
 
-                if(input_element < array_size)
-                  local_mem[lid] += global_mem[input_element];
-              }
-
-              item.barrier(s::access::fence_space::local_space);
-
-              for(size_t stride = wgroup_size / elements_per_thread; stride >= 1; stride /= elements_per_thread) {
-                if(lid < stride) {
-                  for(int i = 0; i < elements_per_thread - 1; ++i) {
-                    local_mem[lid] += local_mem[lid + stride + i];
-                  }
+                  if(input_element < array_size)
+                    local_mem[lid] += global_mem[input_element];
                 }
-                item.barrier(s::access::fence_space::local_space);
-              }
 
-              // Only one work-item per work group writes to global memory
-              if(lid == 0) {
-                global_mem[item.get_global_id()] = local_mem[0];
+                item.barrier(s::access::fence_space::local_space);
+
+                for(size_t stride = wgroup_size / elements_per_thread; stride >= 1; stride /= elements_per_thread) {
+                  if(lid < stride) {
+                    for(int i = 0; i < elements_per_thread - 1; ++i) {
+                      local_mem[lid] += local_mem[lid + stride + i];
+                    }
+                  }
+                  item.barrier(s::access::fence_space::local_space);
+                }
+
+                // Only one work-item per work group writes to global memory
+                if(lid == 0) {
+                  global_mem[item.get_global_id()] = local_mem[0];
+                }
               }
-            }
-          });
+            });
       }));
 
       events.push_back(args.device_queue.submit([&](sycl::handler& cgh) {
         auto global_mem = output_buf.template get_access<s::access::mode::read_write>(cgh);
 
         cgh.parallel_for<ScalarProdGatherKernel<T, Use_ndrange>>(
-            sycl::range<1>{n_wgroups}, [=, num_iters = num_iters](sycl::id<1> idx) { 
-              for(int i = 0; i < num_iters; i++)
-                global_mem[idx] = global_mem[idx * wgroup_size]; 
+            sycl::range<1>{n_wgroups}, [=, num_iters = num_iters](sycl::id<1> idx) {
+              for(int i = 0; i < num_iters; i++) global_mem[idx] = global_mem[idx * wgroup_size];
             });
       }));
       array_size = n_wgroups;
@@ -184,7 +182,7 @@ int main(int argc, char** argv) {
   //   app.run<ScalarProdBench<double, true>>();
   // }
 
-  app.run<ScalarProdBench<int, true>>();
+  app.run<ScalarProdBench<float, true>>();
   // app.run<ScalarProdBench<long long, false>>();
   // app.run<ScalarProdBench<float, false>>();
   // app.run<ScalarProdBench<double, false>>();
