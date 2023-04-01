@@ -19,7 +19,7 @@ private:
 public:
   matrixMul(int size, int num_iters, const s::accessor<T, 1, s::access_mode::read> in_A,
       const s::accessor<T, 1, s::access_mode::read> in_B, s::accessor<T, 1, s::access_mode::read_write> out)
-      : size(size), in_A(in_A), in_B(in_B), out(out) {}
+      : size(size), num_iters(num_iters), in_A(in_A), in_B(in_B), out(out) {}
 
   void operator()(s::id<2> gid) const {
     int gidx = gid.get(0);
