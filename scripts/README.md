@@ -33,6 +33,7 @@
     - argv[2] -> path to features csv
     - argv[3] -> path to output directory
 
+NOTE: when merging with the normalized kernel features, use `norm` as an argument to also normalize the core frequencies
 
 ## Plots
 
