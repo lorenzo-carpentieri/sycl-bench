@@ -22,6 +22,8 @@ if(CMAKE_GENERATOR STREQUAL "Ninja")
 endif()
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
+include_directories(${CMAKE_SOURCE_DIR}/include-bloom-filter)
+
 include_directories(${CMAKE_SOURCE_DIR}/polybench/common)
 
 set(SYCL_IMPL "" CACHE STRING "Select SYCL implementation [hipSYCL | LLVM | LLVM-CUDA | triSYCL]")
@@ -93,6 +95,7 @@ set(benchmarks
   single-kernel/sinewave.cpp
   single-kernel/perlin.cpp
   single-kernel/matrix_mul.cpp
+  single-kernel/bloom_filter.cpp
 
   usm/matrix_mul_usm.cpp
   pattern/segmentedreduction.cpp
