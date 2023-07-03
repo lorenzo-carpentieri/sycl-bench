@@ -198,7 +198,7 @@ public:
     bloom_filter.resize(bloom_filter_size);
     std::fill(bloom_filter.begin(), bloom_filter.end(), 0);
 
-	  // memset(bloom_filter,0,bloom_filter_size);
+      // memset(bloom_filter,0,bloom_filter_size);
   
 
     num_input_words = generateRandomStrings(input_words, num_bytes_true_file);
@@ -264,7 +264,7 @@ public:
         int currentWord = block[1] * block_position[1] + local_work_item_id[1];
 
         if(currentWord >= _numWords)
-		      return;
+              return;
         int blockStartWordIndex = block[1] * block_position[1];
         // position of the first character of the first word in the thread block
         int minPos = input_pos_acc[blockStartWordIndex];	
@@ -298,7 +298,7 @@ public:
       }
 
       s::range<2> block{calculateBlockDim(num_input_words)};
-      size_t grid_y = num_input_words;
+      size_t grid_y = (num_input_words/block[1]) * block[1];
       if(num_input_words % block[1] > 0)
         grid_y += block[1];
 
@@ -314,6 +314,30 @@ public:
       // parallel for    
     }));   
 
+    events.push_back(q.submit([&](sycl::handler& cgh) {
+      // max local memory size in bytes
+      size_t max_local_mem_size = device.get_info<sycl::info::device::local_mem_size>();
+      if(num_bytes_false_file > max_local_mem_size || num_bytes_true_file > max_local_mem_size){
+        std::cout<<"Error the max local size in bytes is: " << max_local_mem_size << std::endl;
+        return;
+      }
+
+      s::range<2> block{calculateBlockDim(num_query_words)};
+      size_t grid_y = (num_query_words / block[1]) * block[1];
+      if(num_query_words % block[1] > 0)
+        grid_y += block[1];
+
+      s::range<2> grid{num_hashes, grid_y};
+      
+      auto bloom_filter_acc = bloom_filter_buf.get_access<s::access::mode::read>(cgh);
+      auto input_words_acc = query_words_buf.get_access<s::access_mode::read>(cgh);
+      auto input_pos_acc = query_pos_buf.get_access<s::access_mode::read>(cgh);
+      auto results_acc = query_results_buf.get_access<s::access_mode::write>(cgh);
+      s::local_accessor<char,1> wordCache(s::range<1>(block[1]*51), cgh);
+      cgh.parallel_for(s::nd_range<2>(grid, block), 
+        QueryWordsKernel(bloom_filter_acc, input_words_acc, input_pos_acc, results_acc, wordCache, num_input_words, num_hashes, bloom_filter_size));
+      // parallel for    
+    }));   
   
   }
 
@@ -321,6 +345,8 @@ public:
   bool verify(VerificationSetting& ver) {
     s::host_accessor<char> bloom_filter_host = bloom_filter_buf.get_host_access();
     s::host_accessor<char> results_input_host = input_results_buf.get_host_access();
+    s::host_accessor<char> results_query_host = query_results_buf.get_host_access();
+
     
     // bloom_filter_buf.reset();
     // for(int i = 0; i < bloom_filter_size; i++){
@@ -332,6 +358,16 @@ public:
       if(results_input_host[i]!=1)
         return false;
     }
+    
+    int num_false=0;
+    int num_true=0;
+    for(int i = 0; i < num_query_words; i++){
+      if(results_query_host[i]==0)
+        num_false++;
+      else
+        num_true++;
+    }
+    printf("num_true: %d, num_false: %d \n", num_true, num_false);
 
     return true;
   }
