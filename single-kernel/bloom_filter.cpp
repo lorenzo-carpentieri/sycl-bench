@@ -190,8 +190,8 @@ public:
   void setup() {
     bloom_filter_size = args.problem_size;
     num_hashes = args.cli.getOrDefault<size_t>("--num-hashes", 10);
-    num_bytes_true_file = args.cli.getOrDefault<size_t>("--true-file-size", 2500);
-    num_bytes_false_file = args.cli.getOrDefault<size_t>("--false-file-size", 2500);
+    num_bytes_true_file = args.cli.getOrDefault<size_t>("--file-size", 2500);
+    num_bytes_false_file = args.cli.getOrDefault<size_t>("--file-size", 2500);
 
     input_words = (char *) malloc(sizeof(char)*num_bytes_true_file);
     query_words = (char *) malloc(sizeof(char)*num_bytes_false_file);
@@ -241,7 +241,7 @@ public:
       }
 
       s::range<2> block{calculateBlockDim(num_input_words)};
-      size_t grid_y = num_input_words;
+      size_t grid_y = (num_input_words /block[1]) * block[1];
       if(num_input_words % block[1] > 0)
         grid_y += block[1];
 
@@ -335,7 +335,7 @@ public:
       auto results_acc = query_results_buf.get_access<s::access_mode::write>(cgh);
       s::local_accessor<char,1> wordCache(s::range<1>(block[1]*51), cgh);
       cgh.parallel_for(s::nd_range<2>(grid, block), 
-        QueryWordsKernel(bloom_filter_acc, input_words_acc, input_pos_acc, results_acc, wordCache, num_input_words, num_hashes, bloom_filter_size));
+        QueryWordsKernel(bloom_filter_acc, input_words_acc, input_pos_acc, results_acc, wordCache, num_query_words, num_hashes, bloom_filter_size));
       // parallel for    
     }));   
   
