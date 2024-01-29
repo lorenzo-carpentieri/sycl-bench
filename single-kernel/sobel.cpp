@@ -34,7 +34,7 @@ public:
     num_iters = args.num_iterations;
 
     input.resize(size * size);
-    load_bitmap_mirrored("../../share/Brommy.bmp", size, input);
+    load_bitmap_mirrored("../Brommy.bmp", size, input);
     output.resize(size * size);
 
     input_buf.initialize(args.device_queue, input.data(), s::range<2>(size, size));
