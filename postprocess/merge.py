@@ -22,7 +22,7 @@ if len(sys.argv) == 5 and sys.argv[4] == "norm":
 
 sycl_bench_files={}
 features_files={}
-kernels = ["matrix_mul", "sobel"]
+kernels = ["lin_reg_error", "median"]
 for kernel in kernels:
     sycl_bench_files[kernel] = []
 
