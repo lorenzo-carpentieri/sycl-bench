@@ -182,14 +182,6 @@ public:
           cgh.parallel_for(s::range<2>{size_mat_mul, size_mat_mul},
               matrix_mul<T>(size_mat_mul, num_iters_mat_mul, acc_a, acc_b, acc_c)); // end parallel for
         }));
-      } else if(approach == FreqScalingApproach::PER_KERNEL) {
-        events.push_back(args.device_queue.submit(0, 1117, [&](s::handler& cgh) {
-          auto acc_a = a_buf.template get_access<s::access_mode::read>(cgh);
-          auto acc_b = b_buf.template get_access<s::access_mode::read>(cgh);
-          auto acc_c = c_buf.template get_access<s::access_mode::read_write>(cgh);
-          cgh.parallel_for(s::range<2>{size_mat_mul, size_mat_mul},
-              matrix_mul<T>(size_mat_mul, num_iters_mat_mul, acc_a, acc_b, acc_c)); // end parallel for
-        }));
       } else {
         events.push_back(args.device_queue.submit([&](s::handler& cgh) {
           auto acc_a = a_buf.template get_access<s::access_mode::read>(cgh);
@@ -207,14 +199,6 @@ public:
           auto in = input_buf.template get_access<s::access_mode::read>(cgh);
           auto out = output_buf.template get_access<s::access_mode::discard_write>(cgh);
 
-          cgh.depends_on(events[events.size() - 1]);
-          cgh.parallel_for(
-              s::range<2>{size_sobel, size_sobel}, sobel(size_sobel, num_iters_sobel, in, out)); // end parallel for
-        }));
-      } else if(approach == FreqScalingApproach::PER_KERNEL) {
-        events.push_back(args.device_queue.submit(0, 187, [&](s::handler& cgh) {
-          auto in = input_buf.template get_access<s::access_mode::read>(cgh);
-          auto out = output_buf.template get_access<s::access_mode::discard_write>(cgh);
           cgh.depends_on(events[events.size() - 1]);
           cgh.parallel_for(
               s::range<2>{size_sobel, size_sobel}, sobel(size_sobel, num_iters_sobel, in, out)); // end parallel for
