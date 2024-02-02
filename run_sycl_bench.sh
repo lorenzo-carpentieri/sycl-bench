@@ -63,7 +63,7 @@ fi
 
 if [ "$platform" == "amd" ]
 then
-  rocm-smi --device=0 --setperflevel manual
+  rocm-smi --device=0 --setperflevel auto > /dev/null
 fi
 
 sampled_freq=()
@@ -78,8 +78,13 @@ for core_freq in $core_frequencies; do
 done
 
 mem_freq=$def_mem
-echo $core_frequencies
 for core_freq in $core_frequencies; do
+  # For the amd platform and Intel gpu platform we consider the default frequency the auto mode of the GPUs
+  if [ "$platform" == "amd" ] && [ "$core_freq" == 0 ]; then
+    rocm-smi --device=0 --setperflevel auto > /dev/null
+  elif  [ "$platform" == "amd" ] && [ "$core_freq" != 0 ]; then
+    rocm-smi --device=0 --setperflevel manual > /dev/null
+  fi
   echo "[*] Running benchmarks for frequency $core_freq"
   # $SCRIPT_DIR/build/bit_compression --device=gpu --size=131072 --num-iters=1000000 --num-runs=$runs --memory-freq=${mem_freq} --core-freq=${core_freq} > $SCRIPT_DIR/logs/bit_compression_${mem_freq}_${core_freq}.log
   # echo -n "* "
