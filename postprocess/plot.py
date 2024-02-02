@@ -6,10 +6,11 @@ import matplotlib
 import matplotlib.pyplot as plt
 import pandas as pd
 from paretoset import paretoset
-
+import seaborn as sns
 matplotlib.rcParams['pdf.fonttype'] = 42
 matplotlib.rcParams['ps.fonttype'] = 42
 
+sns.set_theme()
 pd.set_option("display.max_columns", None)
 pd.set_option("display.max_rows", None)
 if len(sys.argv) != 5:
@@ -111,7 +112,7 @@ for file in os.listdir(kernels_dir):
 
         
         color_bar=plt.colorbar(sc)
-        color_bar.set_label("Core Frequency", size=axis_label_size)
+        color_bar.set_label("Core Frequency [MHz]", size=axis_label_size)
         color_bar.ax.tick_params(labelsize=ticks_size)
        
         # Compute the pareto set point and print on the plot
