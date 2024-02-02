@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from paretoset import paretoset
 import seaborn as sns
+
 matplotlib.rcParams['pdf.fonttype'] = 42
 matplotlib.rcParams['ps.fonttype'] = 42
 
@@ -100,13 +101,13 @@ for file in os.listdir(kernels_dir):
         sc = plt.scatter(kernel_speedup.values, kernel_norm_energy.values, s=scatter_size, c=z, vmin=min_core_freq, vmax=max_core_freq, cmap=cm, zorder=2)        
         plt.scatter(1,1, marker="x", color="black", s=scatter_size_energy_target, zorder=4, label="default configuration")
         # add squared point for min_edp
-        plt.scatter(min_edp_speedup,min_edp_norm_energy, marker="^", color="blue", s=scatter_size_energy_target, zorder=4, label="min_edp")
+        plt.scatter(min_edp_speedup,min_edp_norm_energy, marker="^", color="blue", s=scatter_size_energy_target, zorder=4, label="Min EDP")
         # add squared point for min_ed2p
         # plt.scatter(min_ed2p_speedup,min_ed2p_norm_energy, marker="^", color="green", s=scatter_size_energy_target, zorder=4, label="min_ed2p")
         # add point for min_energy
-        plt.scatter(min_energy_speedup, min_energy_norm_energy, marker="^", color="orange", s=scatter_size_energy_target, zorder=4, label="min_energy")
+        plt.scatter(min_energy_speedup, min_energy_norm_energy, marker="^", color="orange", s=scatter_size_energy_target, zorder=4, label="Min Energy")
         # add point for max_perf
-        plt.scatter(max_perf_speedup,max_perf_norm_energy, marker="^", color="gray", s=scatter_size_energy_target, zorder=4, label="max_perf")
+        plt.scatter(max_perf_speedup,max_perf_norm_energy, marker="^", color="gray", s=scatter_size_energy_target, zorder=4, label="Max Perf")
         
         
 
