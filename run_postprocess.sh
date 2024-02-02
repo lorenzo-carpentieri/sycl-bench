@@ -7,9 +7,9 @@ logs_folder=logs
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 
-nvsmi_out=$(nvidia-smi  -q | grep "Default Applications Clocks" -A 2 | tail -n +2)
-def_core=$(echo $nvsmi_out | awk '{print $3}')
-def_mem=$(echo $nvsmi_out | awk '{print $7}')
+# nvsmi_out=$(nvidia-smi  -q | grep "Default Applications Clocks" -A 2 | tail -n +2)
+# def_core=$(echo $nvsmi_out | awk '{print $3}')
+# def_mem=$(echo $nvsmi_out | awk '{print $7}')
 
 echo "Parsing logs..."
 python3 $SCRIPT_DIR/postprocess/parse.py $SCRIPT_DIR/$logs_folder $SCRIPT_DIR/parsed
