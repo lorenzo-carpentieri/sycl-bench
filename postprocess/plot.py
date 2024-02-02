@@ -28,7 +28,7 @@ if not os.path.exists(output_dir):
 ticks_size=11
 axis_label_size=13
 scatter_size=15
-scatter_size_energy_target=20
+scatter_size_energy_target=50
 legend_size=11
 
 pd.set_option("display.width", 1000)
@@ -99,13 +99,13 @@ for file in os.listdir(kernels_dir):
         sc = plt.scatter(kernel_speedup.values, kernel_norm_energy.values, s=scatter_size, c=z, vmin=min_core_freq, vmax=max_core_freq, cmap=cm, zorder=2)        
         plt.scatter(1,1, marker="x", color="black", s=scatter_size_energy_target, zorder=4, label="default configuration")
         # add squared point for min_edp
-        plt.scatter(min_edp_speedup,min_edp_norm_energy, marker="s", color="blue", s=scatter_size_energy_target, zorder=4, label="min_edp")
+        plt.scatter(min_edp_speedup,min_edp_norm_energy, marker="^", color="blue", s=scatter_size_energy_target, zorder=4, label="min_edp")
         # add squared point for min_ed2p
-        plt.scatter(min_ed2p_speedup,min_ed2p_norm_energy, marker="s", color="green", s=scatter_size_energy_target, zorder=4, label="min_ed2p")
+        # plt.scatter(min_ed2p_speedup,min_ed2p_norm_energy, marker="^", color="green", s=scatter_size_energy_target, zorder=4, label="min_ed2p")
         # add point for min_energy
-        plt.scatter(min_energy_speedup, min_energy_norm_energy, marker="s", color="orange", s=scatter_size_energy_target, zorder=4, label="min_energy")
+        plt.scatter(min_energy_speedup, min_energy_norm_energy, marker="^", color="orange", s=scatter_size_energy_target, zorder=4, label="min_energy")
         # add point for max_perf
-        plt.scatter(max_perf_speedup,max_perf_norm_energy, marker="s", color="gray", s=scatter_size_energy_target, zorder=4, label="max_perf")
+        plt.scatter(max_perf_speedup,max_perf_norm_energy, marker="^", color="gray", s=scatter_size_energy_target, zorder=4, label="max_perf")
         
         
 
@@ -136,7 +136,7 @@ for file in os.listdir(kernels_dir):
         cur_xlim_left, cur_xlim_right = plt.xlim()
         cur_xlim_bottom, cur_ylim_top = plt.ylim()
         x1, y1 = [cur_xlim_left, np_array[0][0]], [np_array[0][1], np_array[0][1]]
-        plt.plot(x1, y1, color="red", linewidth=2.1, label="Pareto Front")
+        plt.plot(x1, y1, color="red", linewidth=1.5, label="Pareto Front")
 
         for i in range(pset_size):
             if not (i == pset_size-1):
@@ -146,12 +146,12 @@ for file in os.listdir(kernels_dir):
                 next_y = np_array[i+1][1]
                 x1, y1 = [current_x, current_x], [current_y, next_y]
                 x2, y2 = [current_x, next_x], [next_y, next_y]
-                plt.plot(x1, y1, x2, y2, color="red", linewidth=2.5)
+                plt.plot(x1, y1, x2, y2, color="red", linewidth=1.5)
 
         last_point = np_array[pset_size-1]
 
         x1, y1 = [last_point[0], last_point[0]], [last_point[1], cur_ylim_top]
-        plt.plot(x1, y1, color="red", linewidth=2.5)
+        plt.plot(x1, y1, color="red", linewidth=1.5)
 
         plt.xlim(left=cur_xlim_left)
 
