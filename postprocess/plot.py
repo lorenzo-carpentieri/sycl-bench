@@ -28,6 +28,7 @@ if not os.path.exists(output_dir):
 ticks_size=11
 axis_label_size=13
 scatter_size=15
+scatter_size_energy_target=20
 legend_size=11
 
 pd.set_option("display.width", 1000)
@@ -52,6 +53,31 @@ for file in os.listdir(kernels_dir):
         kernel_speedup = kernel_data["speedup"]
         kernel_norm_energy = kernel_data["norm_energy"]
 
+        min_energy_row = kernel_data.loc[kernel_data['norm_energy'].idxmin()]
+        min_edp_row = kernel_data.loc[kernel_data['max-edp'].idxmin()]
+        min_ed2p_row = kernel_data.loc[kernel_data['max-ed2p'].idxmin()]
+        max_perf_row = kernel_data.loc[kernel_data['speedup'].idxmax()]
+
+        # print(min_energy_row)
+        # Extract speedup and normalized_energy values from the minimum energy row
+        min_energy_speedup = min_energy_row['speedup']
+        min_energy_norm_energy = min_energy_row['norm_energy']
+        
+        # Extract speedup and normalized_energy values from the minimum edp row
+        min_edp_speedup = min_edp_row['speedup']
+        min_edp_norm_energy = min_edp_row['norm_energy']
+       
+        # Extract speedup and normalized_energy values from the minimum ed2p row
+        min_ed2p_speedup = min_ed2p_row['speedup']
+        min_ed2p_norm_energy = min_ed2p_row['norm_energy']
+        
+         # Extract speedup and normalized_energy values from the maximum perf row
+        max_perf_speedup = max_perf_row['speedup']
+        max_perf_norm_energy = max_perf_row['norm_energy']
+        
+        
+    
+        
         # Clear the plot to avoid that data of the previous itereation are rewritten in the plot
         plt.clf()
        
@@ -71,8 +97,19 @@ for file in os.listdir(kernels_dir):
         plt.yticks(size=ticks_size)
 
         sc = plt.scatter(kernel_speedup.values, kernel_norm_energy.values, s=scatter_size, c=z, vmin=min_core_freq, vmax=max_core_freq, cmap=cm, zorder=2)        
-        plt.scatter(1,1, marker="x", color="black", s=scatter_size, zorder=4, label="default configuration")
+        plt.scatter(1,1, marker="x", color="black", s=scatter_size_energy_target, zorder=4, label="default configuration")
+        # add squared point for min_edp
+        plt.scatter(min_edp_speedup,min_edp_norm_energy, marker="s", color="blue", s=scatter_size_energy_target, zorder=4, label="min_edp")
+        # add squared point for min_ed2p
+        plt.scatter(min_ed2p_speedup,min_ed2p_norm_energy, marker="s", color="green", s=scatter_size_energy_target, zorder=4, label="min_ed2p")
+        # add point for min_energy
+        plt.scatter(min_energy_speedup, min_energy_norm_energy, marker="s", color="orange", s=scatter_size_energy_target, zorder=4, label="min_energy")
+        # add point for max_perf
+        plt.scatter(max_perf_speedup,max_perf_norm_energy, marker="s", color="gray", s=scatter_size_energy_target, zorder=4, label="max_perf")
+        
+        
 
+        
         color_bar=plt.colorbar(sc)
         color_bar.set_label("Core Frequency", size=axis_label_size)
         color_bar.ax.tick_params(labelsize=ticks_size)
@@ -84,10 +121,10 @@ for file in os.listdir(kernels_dir):
         pset = df_speedup_energy[mask]
         pset = pset.sort_values(by=["speedup"])
 
-        if kernel_name == "Matrix_mul" or kernel_name == "Sobel3":
-            print(kernel_name)
-            print(f"max {pset[pset['energy'] == pset['energy'].max()]}")
-            print(f"min {pset[pset['energy'] == pset['energy'].min()]}")
+        # if kernel_name == "LinearRegression_fp32" or kernel_name == "MedianFilter":
+        #     print(kernel_name)
+        #     print(f"max {pset[pset['energy'] == pset['energy'].max()]}")
+        #     print(f"min {pset[pset['energy'] == pset['energy'].min()]}")
 
         
         np_array = pset.to_numpy()
@@ -99,7 +136,7 @@ for file in os.listdir(kernels_dir):
         cur_xlim_left, cur_xlim_right = plt.xlim()
         cur_xlim_bottom, cur_ylim_top = plt.ylim()
         x1, y1 = [cur_xlim_left, np_array[0][0]], [np_array[0][1], np_array[0][1]]
-        plt.plot(x1, y1, color="red", linewidth=2.5, label="Pareto Front")
+        plt.plot(x1, y1, color="red", linewidth=2.1, label="Pareto Front")
 
         for i in range(pset_size):
             if not (i == pset_size-1):
@@ -121,7 +158,7 @@ for file in os.listdir(kernels_dir):
         plt.legend(fontsize=legend_size)
         plt.savefig(f"{output_dir}/{kernel_name}.pdf", bbox_inches="tight")
 
-        if kernel_name == "BlackScholes":
+        if kernel_name == "LinearRegression_fp32":
             hlines = []
             line_style = [":", "-.", "--"] 
             xmin, xmax = plt.xlim()
