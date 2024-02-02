@@ -106,16 +106,18 @@ public:
           time_metrics.markAsUnavailable("kernel-time");
         }
         if(detail::BenchmarkTraits<Benchmark>::supportsQueueProfiling) {
-#ifdef __ENABLED_SYNERGY
-          int i = 0;
           double total_energy = 0;
+#if defined(__ENABLED_SYNERGY) && defined(SYNERGY_KERNEL_PROFILING)
           for(sycl::event& e : run_events) {
             double energy = args.device_queue.kernel_energy_consumption(e);
             total_energy += energy;
-            i++;
           }
-
           energy_metrics.addEnergyResult("kernel-energy", total_energy);
+          total_energy=0;
+#endif
+#if defined(__ENABLED_SYNERGY) && defined(SYNERGY_DEVICE_PROFILING)
+          total_energy = args.device_queue.device_energy_consumption();
+          energy_metrics.addEnergyResult("device-energy", total_energy);
 #endif
         }
 
