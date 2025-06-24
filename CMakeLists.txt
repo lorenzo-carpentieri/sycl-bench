@@ -150,7 +150,6 @@ set(benchmarks
 
   # compiletime/compiletime.cpp
   spec_constants/spec_constant_convolution.cpp
-  phase-aware/mmmm_ssss.cpp
 
 )
 
