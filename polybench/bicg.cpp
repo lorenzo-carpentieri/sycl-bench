@@ -102,8 +102,8 @@ public:
     constexpr auto ERROR_THRESHOLD = 0.05;
 
     // Trigger writebacks
-    s_buffer.reset();
-    q_buffer.reset();
+    auto s = s_buffer.get_host_access();
+    auto q = q_buffer.get_host_access();
 
     std::vector<DATA_TYPE> s_cpu(size);
     std::vector<DATA_TYPE> q_cpu(size);
@@ -123,7 +123,7 @@ public:
     return true;
   }
 
-  static std::string getBenchmarkName() { return "Polybench_Bicg"; }
+  static std::string getBenchmarkName(BenchmarkArgs& args) { return "Polybench_Bicg"; }
 
 private:
   BenchmarkArgs args;

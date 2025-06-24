@@ -142,7 +142,7 @@ public:
     std::vector<DATA_TYPE> hz_cpu(size * size);
 
     // Trigger writebacks
-    hz_buffer.reset();
+    auto* hz = hz_buffer.get_host_access().get_pointer();
 
     init_arrays(fict_cpu.data(), ex_cpu.data(), ey_cpu.data(), hz_cpu.data(), size);
 
@@ -181,7 +181,7 @@ public:
     return true;
   }
 
-  static std::string getBenchmarkName() { return "Polybench_Fdtd2d"; }
+  static std::string getBenchmarkName(BenchmarkArgs& args) { return "Polybench_Fdtd2d"; }
 
 private:
   BenchmarkArgs args;
@@ -201,9 +201,8 @@ private:
 int main(int argc, char** argv) {
   BenchmarkApp app(argc, argv);
 
-  if constexpr(SYCL_BENCH_ENABLE_FP64_BENCHMARKS) {
-    if(app.deviceSupportsFP64())
-      app.run<Polybench_Fdtd2d>();
+  if constexpr(SYCL_BENCH_HAS_FP64_SUPPORT) {
+    app.run<Polybench_Fdtd2d>();
   }
   return 0;
 }

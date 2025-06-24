@@ -34,7 +34,7 @@ public:
     num_iters = args.num_iterations;
 
     input.resize(size * size);
-    load_bitmap_mirrored("../Brommy.bmp", size, input);
+    load_bitmap_mirrored("../share/Brommy.bmp", size, input);
     output.resize(size * size);
 
     input_buf.initialize(args.device_queue, input.data(), s::range<2>(size, size));
@@ -102,7 +102,7 @@ public:
 
   bool verify(VerificationSetting& ver) {
     // Triggers writeback
-    output_buf.reset();
+    auto output = output_buf.get_host_access().get_pointer();
     save_bitmap("sobel3.bmp", size, output);
 
     const float kernel[] = {1, 0, -1, 2, 0, -2, 1, 0, -1};
@@ -146,7 +146,7 @@ public:
   }
 
 
-  static std::string getBenchmarkName() { return "Sobel3"; }
+  static std::string getBenchmarkName(BenchmarkArgs& args) { return "Sobel3"; }
 
 }; // SobelBench class
 

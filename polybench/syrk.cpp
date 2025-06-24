@@ -88,7 +88,7 @@ public:
     constexpr auto ERROR_THRESHOLD = 0.05;
 
     // Trigger writeback
-    C_buffer.reset();
+    auto* C = C_buffer.get_host_access().get_pointer();
 
     std::vector<DATA_TYPE> C_cpu(size * size);
 
@@ -107,7 +107,7 @@ public:
     return true;
   }
 
-  static std::string getBenchmarkName() { return "Polybench_Syrk"; }
+  static std::string getBenchmarkName(BenchmarkArgs& args) { return "Polybench_Syrk"; }
 
 private:
   BenchmarkArgs args;

@@ -114,8 +114,8 @@ protected:
     });
   }
 
-  void submitNDRange(sycl::buffer<particle_type>& particles, sycl::buffer<vector_type>& velocities) {
-    args.device_queue.submit([&](sycl::handler& cgh) {
+  void submitNDRange(std::vector<sycl::event>& events, sycl::buffer<particle_type>& particles, sycl::buffer<vector_type>& velocities) {
+   events.push_back(args.device_queue.submit([&](sycl::handler& cgh) {
       sycl::nd_range<1> execution_range{sycl::range<1>{args.problem_size}, sycl::range<1>{args.local_size}};
 
       auto particles_access = particles.template get_access<sycl::access::mode::read>(cgh);
@@ -177,11 +177,11 @@ protected:
               output_particles_access[global_id] = my_particle;
             }
           });
-    });
+    }));
   }
 
-  void submitHierarchical(sycl::buffer<particle_type>& particles, sycl::buffer<vector_type>& velocities) {
-    args.device_queue.submit([&](sycl::handler& cgh) {
+  void submitHierarchical(std::vector<sycl::event>& events, sycl::buffer<particle_type>& particles, sycl::buffer<vector_type>& velocities) {
+    events.push_back(args.device_queue.submit([&](sycl::handler& cgh) {
       sycl::nd_range<1> execution_range{sycl::range<1>{args.problem_size}, sycl::range<1>{args.local_size}};
 
       auto particles_access = particles.template get_access<sycl::access::mode::read>(cgh);
@@ -253,7 +253,7 @@ protected:
               }
             });
           });
-    });
+    }));
   }
 };
 
@@ -267,9 +267,9 @@ public:
   {}
 
 
-  void run() { this->submitNDRange(this->particles_buf.get(), this->velocities_buf.get()); }
+  void run(std::vector<sycl::event>& events) { this->submitNDRange(events, this->particles_buf.get(), this->velocities_buf.get()); }
 
-  std::string getBenchmarkName() {
+  std::string getBenchmarkName(BenchmarkArgs& args) {
     std::stringstream name;
     name << "NBody_NDRange_";
     name << ReadableTypename<float_type>::name;
@@ -288,9 +288,9 @@ public:
   {}
 
 
-  void run() { this->submitHierarchical(this->particles_buf.get(), this->velocities_buf.get()); }
+  void run(std::vector<sycl::event>& events) { this->submitHierarchical(events, this->particles_buf.get(), this->velocities_buf.get()); }
 
-  std::string getBenchmarkName() {
+  std::string getBenchmarkName(BenchmarkArgs& args) {
     std::stringstream name;
     name << "NBody_Hierarchical_";
     name << ReadableTypename<float_type>::name;
@@ -303,15 +303,13 @@ int main(int argc, char** argv) {
   BenchmarkApp app(argc, argv);
 
   app.run<NBodyHierarchical<float>>();
-  if constexpr(SYCL_BENCH_ENABLE_FP64_BENCHMARKS) {
-    if(app.deviceSupportsFP64())
-      app.run<NBodyHierarchical<double>>();
+  if constexpr(SYCL_BENCH_HAS_FP64_SUPPORT) {
+    app.run<NBodyHierarchical<double>>();
   }
   if(app.shouldRunNDRangeKernels()) {
     app.run<NBodyNDRange<float>>();
-    if constexpr(SYCL_BENCH_ENABLE_FP64_BENCHMARKS) {
-      if(app.deviceSupportsFP64())
-        app.run<NBodyNDRange<double>>();
+    if constexpr(SYCL_BENCH_HAS_FP64_SUPPORT) {
+      app.run<NBodyNDRange<double>>();
     }
   }
 

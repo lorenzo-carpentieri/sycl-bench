@@ -21,6 +21,7 @@
 #include "energy_metrics.h"
 #include "prefetched_buffer.h"
 #include "queue_macro.h"
+#include "memory_wrappers.h"
 #include "time_metrics.h"
 
 #ifdef NV_ENERGY_MEAS
@@ -37,7 +38,7 @@ public:
 
   template <typename... Args>
   void run(Args&&... additionalArgs) {
-    args.result_consumer->proceedToBenchmark(Benchmark{args, additionalArgs...}.getBenchmarkName());
+    args.result_consumer->proceedToBenchmark(Benchmark{args, additionalArgs...}.getBenchmarkName(args));
 
     args.result_consumer->consumeResult("problem-size", std::to_string(args.problem_size));
     args.result_consumer->consumeResult("local-size", std::to_string(args.local_size));
@@ -47,7 +48,7 @@ public:
     args.result_consumer->consumeResult("memory-freq", std::to_string(args.memory_freq));
 #endif
     args.result_consumer->consumeResult(
-        "device-name", args.device_queue.get_device().template get_info<sycl::info::device::name>());
+        "device-name", args.device_queue.get_device().get_info<sycl::info::device::name>());
     args.result_consumer->consumeResult("sycl-implementation", this->getSyclImplementation());
 
     TimeMetricsProcessor<Benchmark> time_metrics(args);
@@ -86,24 +87,38 @@ public:
         for(auto h : hooks) h->postKernel();
         // Performance critical measurement section ends here
 
-        time_metrics.addTimingResult("run-time", std::chrono::duration_cast<std::chrono::nanoseconds>(after - before));
+        auto run_time = std::chrono::duration_cast<std::chrono::nanoseconds>(after - before);
+        time_metrics.addTimingResult("run-time", run_time);
 
         if(detail::BenchmarkTraits<Benchmark>::supportsQueueProfiling) {
 #if(SYCL_BENCH_ENABLE_QUEUE_PROFILING == 1)
           // TODO: We might also want to consider the "command_submit" time.
           std::chrono::nanoseconds total_time{0};
+          std::chrono::nanoseconds submit_time{0};
+          // Runtime without kernel time
+          std::chrono::nanoseconds system_time{0};
           for(auto& e : run_events) {
             const auto start = e.get_profiling_info<sycl::info::event_profiling::command_start>();
             const auto end = e.get_profiling_info<sycl::info::event_profiling::command_end>();
+            const auto submit = e.get_profiling_info<sycl::info::event_profiling::command_submit>();
             total_time += std::chrono::nanoseconds(end - start);
+            submit_time += std::chrono::nanoseconds(start - submit);
           }
+          system_time += std::chrono::nanoseconds(run_time - total_time);
+
           time_metrics.addTimingResult("kernel-time", total_time);
+          time_metrics.addTimingResult("submit-time", submit_time);
+          time_metrics.addTimingResult("system-time", system_time);
 #else
           time_metrics.markAsUnavailable("kernel-time");
+          time_metrics.markAsUnavailable("submit-time");
+          time_metrics.markAsUnavailable("system-time");
 #endif
 
         } else {
           time_metrics.markAsUnavailable("kernel-time");
+          time_metrics.markAsUnavailable("submit-time");
+          time_metrics.markAsUnavailable("system-time");
         }
         if(detail::BenchmarkTraits<Benchmark>::supportsQueueProfiling) {
           double total_energy = 0;
@@ -201,7 +216,7 @@ public:
   template <class Benchmark, typename... AdditionalArgs>
   void run(AdditionalArgs&&... additional_args) {
     try {
-      const auto name = Benchmark{args, additional_args...}.getBenchmarkName();
+      const auto name = Benchmark{args, additional_args...}.getBenchmarkName(args);
       if(benchmark_names.count(name) == 0) {
         benchmark_names.insert(name);
       } else {

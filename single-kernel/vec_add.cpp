@@ -63,7 +63,7 @@ public:
 
   bool verify(VerificationSetting& ver) {
     // Triggers writeback
-    output_buf.reset();
+    auto output = output_buf.get_host_access();
 
     bool pass = true;
     for(size_t i = ver.begin[0]; i < ver.begin[0] + ver.range[0]; i++) {
@@ -76,7 +76,7 @@ public:
     return pass;
   }
 
-  static std::string getBenchmarkName() {
+  static std::string getBenchmarkName(BenchmarkArgs& args) {
     std::stringstream name;
     name << "VectorAddition_";
     name << ReadableTypename<T>::name;
@@ -89,9 +89,8 @@ int main(int argc, char** argv) {
   app.run<VecAddBench<int>>();
   app.run<VecAddBench<long long>>();
   app.run<VecAddBench<float>>();
-  if constexpr(SYCL_BENCH_ENABLE_FP64_BENCHMARKS) {
-    if(app.deviceSupportsFP64())
-      app.run<VecAddBench<double>>();
+  if constexpr(SYCL_BENCH_HAS_FP64_SUPPORT) {
+    app.run<VecAddBench<double>>();
   }
   return 0;
 }

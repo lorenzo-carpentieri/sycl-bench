@@ -10,6 +10,8 @@
 #endif
 
 #include "queue_macro.h"
+#include "common.h"
+
 #include "result_consumer.h"
 #include <iostream>
 #include <memory>
@@ -143,10 +145,12 @@ struct BenchmarkArgs {
   size_t local_size;
   size_t num_runs;
   selected_queue device_queue;
+  selected_queue device_queue_in_order;
   VerificationSetting verification;
   // can be used to query additional benchmark specific information from the command line
   CommandLine cli;
   std::shared_ptr<ResultConsumer> result_consumer;
+  bool warmup_run;
 };
 
 
@@ -167,6 +171,8 @@ public:
     std::string device_type = cli_parser.getOrDefault<std::string>("--device", "default");
 
     selected_queue q = getQueue(device_type);
+    selected_queue q_in_order = getQueue(device_type, sycl::property::queue::in_order{});
+
 #ifdef __ENABLED_SYNERGY
     q.set_target_frequencies(memory_freq, core_freq);
 #endif
@@ -202,15 +208,17 @@ private:
       return std::shared_ptr<ResultConsumer>{new AppendingCsvResultConsumer{result_consumer_name}};
   }
 
-  selected_queue getQueue(const std::string& device_type) const {
+  template <typename... Props>
+  sycl::queue getQueue(const std::string& device_type, Props&&... props) const {
     const auto getQueueProperties = [&]() -> sycl::property_list {
+
 #if defined(SYCL_BENCH_ENABLE_QUEUE_PROFILING)
 #ifdef __ENABLED_SYNERGY
       return {sycl::property::queue::enable_profiling{}, sycl::property::queue::in_order{}};
 #endif
-      return sycl::property::queue::enable_profiling{};
+      return {sycl::property::queue::enable_profiling{}, props...};
 #endif
-      return {};
+      return {props...};
     };
 
 #ifndef __ENABLED_SYNERGY

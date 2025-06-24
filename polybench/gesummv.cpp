@@ -102,7 +102,7 @@ public:
     constexpr auto ERROR_THRESHOLD = 0.05;
 
     // Trigger writeback
-    y_buffer.reset();
+    auto y = y_buffer.get_host_access();
 
     std::vector<DATA_TYPE> y_cpu(size);
     std::vector<DATA_TYPE> tmp_cpu(size);
@@ -118,7 +118,7 @@ public:
     return true;
   }
 
-  static std::string getBenchmarkName() { return "Polybench_Gesummv"; }
+  static std::string getBenchmarkName(BenchmarkArgs& args) { return "Polybench_Gesummv"; }
 
 private:
   BenchmarkArgs args;

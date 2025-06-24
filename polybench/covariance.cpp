@@ -137,7 +137,7 @@ public:
     std::vector<DATA_TYPE> mean_cpu(size + 1);
 
     // Trigger writeback
-    symmat_buffer.reset();
+    auto* symmat = symmat_buffer.get_host_access().get_pointer();
 
     init_arrays(data_cpu.data(), size);
 
@@ -154,7 +154,7 @@ public:
     return true;
   }
 
-  static std::string getBenchmarkName() { return "Polybench_Covariance"; }
+  static std::string getBenchmarkName(BenchmarkArgs& args) { return "Polybench_Covariance"; }
 
 private:
   BenchmarkArgs args;
