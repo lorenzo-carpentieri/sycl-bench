@@ -188,10 +188,10 @@ public:
 
     auto result_consumer = getResultConsumer(cli_parser.getOrDefault<std::string>("--output", "stdio"));
 #ifdef __ENABLED_SYNERGY
-    return BenchmarkArgs{size, core_freq, memory_freq, num_iterations, local_size, num_runs, q,
+    return BenchmarkArgs{size, core_freq, memory_freq, num_iterations, local_size, num_runs, q, q_in_order,
         VerificationSetting{verification_enabled, verification_begin, verification_range}, cli_parser, result_consumer};
 #else
-    return BenchmarkArgs{size, num_iterations, local_size, num_runs, q,
+    return BenchmarkArgs{size, num_iterations, local_size, num_runs, q,q_in_order,
         VerificationSetting{verification_enabled, verification_begin, verification_range}, cli_parser, result_consumer};
 #endif
   }
