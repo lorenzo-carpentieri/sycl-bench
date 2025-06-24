@@ -171,8 +171,11 @@ public:
     std::string device_type = cli_parser.getOrDefault<std::string>("--device", "default");
 
     selected_queue q = getQueue(device_type);
-    selected_queue q_in_order = getQueue(device_type, sycl::property::queue::in_order{});
-
+    #ifdef __ENABLED_SYNERGY
+    selected_queue q_in_order = getQueue(device_type);
+    #else
+    sycl::queue q_in_order = getQueue(device_type, sycl::property::queue::in_order{});
+    #endif
 #ifdef __ENABLED_SYNERGY
     q.set_target_frequencies(memory_freq, core_freq);
 #endif
@@ -209,7 +212,7 @@ private:
   }
 
   template <typename... Props>
-  sycl::queue getQueue(const std::string& device_type, Props&&... props) const {
+  selected_queue getQueue(const std::string& device_type, Props&&... props) const {
     const auto getQueueProperties = [&]() -> sycl::property_list {
 
 #if defined(SYCL_BENCH_ENABLE_QUEUE_PROFILING)
