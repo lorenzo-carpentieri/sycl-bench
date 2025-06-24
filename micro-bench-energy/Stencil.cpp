@@ -80,7 +80,7 @@ public:
   }
 
 
-  static std::string getBenchmarkName() {
+  static std::string getBenchmarkName(BenchmarkArgs& args) {
     std::string name = "Stencil_";
     name.append(std::is_same_v<ValueType, int> ? "int" : "float")
         .append("_")

@@ -131,7 +131,7 @@ public:
     }));
   }
 
-  static std::string getBenchmarkName() {
+  static std::string getBenchmarkName(BenchmarkArgs& args) {
     std::string name = "ArithMixedUnitType_";
     name.append(std::to_string(AddPercFloat))
         .append("_")

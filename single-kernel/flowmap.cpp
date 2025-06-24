@@ -206,7 +206,7 @@ public:
   bool verify(VerificationSetting& ver) { return true; }
 
 
-  static std::string getBenchmarkName() { return "Flow map"; }
+  static std::string getBenchmarkName(BenchmarkArgs& args) { return "Flow map"; }
 
 }; // FlowMap class
 

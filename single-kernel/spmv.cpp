@@ -130,7 +130,7 @@ public:
   }
 
 
-  static std::string getBenchmarkName() { return "Spmv"; }
+  static std::string getBenchmarkName(BenchmarkArgs& args) { return "Spmv"; }
 
 }; // Spmv class
 

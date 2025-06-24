@@ -166,7 +166,7 @@ public:
   }
 
 
-  static std::string getBenchmarkName() { return "Nbody_local_mem"; }
+  static std::string getBenchmarkName(BenchmarkArgs& args) { return "Nbody_local_mem"; }
 
 }; // NbodyBench class
 

@@ -286,7 +286,7 @@ public:
   }
 
 
-  static std::string getBenchmarkName() { return "PerlinNoise"; }
+  static std::string getBenchmarkName(BenchmarkArgs& args) { return "PerlinNoise"; }
 
 }; // PerlinNoise class
 

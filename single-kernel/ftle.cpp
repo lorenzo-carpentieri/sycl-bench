@@ -192,7 +192,7 @@ public:
   bool verify(VerificationSetting& ver) { return true; }
 
 
-  static std::string getBenchmarkName() { return "Ftle"; }
+  static std::string getBenchmarkName(BenchmarkArgs& args) { return "Ftle"; }
 
 }; //
 

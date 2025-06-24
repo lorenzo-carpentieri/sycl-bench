@@ -122,7 +122,7 @@ public:
     return true;
   }
 
-  static std::string getBenchmarkName() { return "Matrix_mul_usm"; }
+  static std::string getBenchmarkName(BenchmarkArgs& args) { return "Matrix_mul_usm"; }
 
 }; 
 

@@ -75,7 +75,7 @@ public:
   bool verify(VerificationSetting& ver) { return true; }
 
 
-  static std::string getBenchmarkName() { return "Sinewave"; }
+  static std::string getBenchmarkName(BenchmarkArgs& args) { return "Sinewave"; }
 
 }; // Sinewave class
 

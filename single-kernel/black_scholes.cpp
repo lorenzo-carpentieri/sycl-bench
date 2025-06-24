@@ -260,7 +260,7 @@ public:
   }
 
 
-  static std::string getBenchmarkName() { return "Black Scholes"; }
+  static std::string getBenchmarkName(BenchmarkArgs& args) { return "Black Scholes"; }
 
 }; // BlackScholes class
 

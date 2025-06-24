@@ -107,14 +107,14 @@ public:
 
   bool verify(VerificationSetting& ver) {
     // Triggers writeback
-    output_buf.reset();
+    auto output = output_buf.get_host_access().get_pointer();
     save_bitmap("box_blur.bmp", size, output);
 
     return true;
   }
 
 
-  static std::string getBenchmarkName() { return "BoxBlur"; }
+  static std::string getBenchmarkName(BenchmarkArgs& args) { return "BoxBlur"; }
 
 }; // BoxBlurBench class
 

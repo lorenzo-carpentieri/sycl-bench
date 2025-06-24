@@ -92,7 +92,7 @@ public:
   bool verify(VerificationSetting& ver) { return true; }
 
 
-  static std::string getBenchmarkName() { return "Bit Compression"; }
+  static std::string getBenchmarkName(BenchmarkArgs& args) { return "Bit Compression"; }
 
 }; // BitCompression class
 

@@ -116,7 +116,7 @@ public:
   }
 
 
-  static std::string getBenchmarkName() { return "Geometric mean"; }
+  static std::string getBenchmarkName(BenchmarkArgs& args) { return "Geometric mean"; }
 
 }; // GeometricMean class
 

@@ -142,7 +142,7 @@ public:
   }
 
 
-  static std::string getBenchmarkName() { return "Knn"; }
+  static std::string getBenchmarkName(BenchmarkArgs& args) { return "Knn"; }
 
 }; // Knn class
 

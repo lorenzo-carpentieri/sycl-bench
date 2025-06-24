@@ -59,7 +59,7 @@ public:
   }
 
 
-  static std::string getBenchmarkName() {
+  static std::string getBenchmarkName(BenchmarkArgs& args) {
     std::string name = "GlobalMemory_";
     name.append(std::is_same_v<ValueType, int> ? "int" : "float");
     return name;

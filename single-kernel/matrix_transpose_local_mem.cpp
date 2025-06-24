@@ -123,7 +123,7 @@ public:
     return true;
   }
 
-  static std::string getBenchmarkName() { return "Matrix_transpose"; }
+  static std::string getBenchmarkName(BenchmarkArgs& args) { return "Matrix_transpose"; }
 
 }; 
 

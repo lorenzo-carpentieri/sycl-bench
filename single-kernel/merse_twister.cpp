@@ -146,7 +146,7 @@ public:
   bool verify(VerificationSetting& ver) { return true; }
 
 
-  static std::string getBenchmarkName() { return "Merse Twister"; }
+  static std::string getBenchmarkName(BenchmarkArgs& args) { return "Merse Twister"; }
 
 }; // MerseTwister class
 

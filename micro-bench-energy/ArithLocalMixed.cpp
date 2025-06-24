@@ -153,7 +153,7 @@ public:
 
   bool verify(VerificationSetting& ver) { return true; }
 
-  static std::string getBenchmarkName() {
+  static std::string getBenchmarkName(BenchmarkArgs& args) {
     std::string name = "ArithLocalMixed_";
     name.append(std::to_string(LocalSize))
         .append("_")
