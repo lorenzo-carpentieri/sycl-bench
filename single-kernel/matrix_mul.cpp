@@ -74,9 +74,9 @@ public:
 
 
   bool verify(VerificationSetting& ver) {
-    c_buf.reset();
+    auto c_acc = c_buf.get_host_access();
     for(int i = 0; i < size * size; i++)
-      if(size != c[i])
+      if(size != c_acc[i])
         return false;
 
 
