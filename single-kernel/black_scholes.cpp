@@ -191,8 +191,8 @@ public:
               d2 = d1 - sigma * SQRT(T);                                // 2 fo + 1 sf
               flag1 = (d1 < ZERO);
               flag2 = (d2 < ZERO);
-              d1 = fabs(d1); // up 2 fo
-              d2 = fabs(d2);
+              d1 = sycl::fabs(d1); // up 2 fo
+              d2 = sycl::fabs(d2);
               k1 = RECIP(ONE + NCDF * d1); // 2 fo + 1 sf
               k2 = RECIP(ONE + NCDF * d2); // 2 fo + 1 sf
               accum1 = A4 + A5 * k1;
