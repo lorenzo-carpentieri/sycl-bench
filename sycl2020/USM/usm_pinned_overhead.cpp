@@ -19,7 +19,7 @@ protected:
 
 private:
   void init() {
-    sycl::queue& queue = args.device_queue;
+    selected_queue& queue = args.device_queue;
     if constexpr(use_pinned_memory) {
       host_memory = (DATA_TYPE*)sycl::malloc_host(args.problem_size * sizeof(DATA_TYPE), queue);
     } else {
@@ -44,7 +44,7 @@ public:
   }
 
   void setup() {
-    sycl::queue& queue = args.device_queue;
+    selected_queue& queue = args.device_queue;
     if constexpr(!include_init) {
       init();
     }
@@ -52,7 +52,7 @@ public:
   }
 
   void run(std::vector<sycl::event>& events) {
-    sycl::queue& queue = args.device_queue;
+    selected_queue& queue = args.device_queue;
     if constexpr(include_init) {
       init();
     }

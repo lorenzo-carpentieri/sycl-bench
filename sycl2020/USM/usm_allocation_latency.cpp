@@ -23,12 +23,12 @@ public:
   void setup() {}
 
   void run(std::vector<sycl::event>& events) {
-    sycl::queue& queue = args.device_queue;
+    selected_queue& queue = args.device_queue;
     buffer = static_cast<DATA_TYPE*>(sycl::malloc(args.problem_size * sizeof(DATA_TYPE), queue, usm_type));
   }
 
   bool verify(VerificationSetting& settings) {
-    sycl::queue& queue = args.device_queue;
+    selected_queue& queue = args.device_queue;
     queue.fill(buffer, DATA_TYPE{1}, args.problem_size).wait();
     DATA_TYPE* host_ptr = buffer;
     if constexpr(usm_type == sycl::usm::alloc::device) {

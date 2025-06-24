@@ -30,7 +30,7 @@ protected:
     return s::nd_range<1>{args.problem_size, args.problem_size > 1024 ? 1024 : args.problem_size};
   }
 
-  sycl::queue& getQueue() {
+  selected_queue& getQueue() {
     if constexpr(in_order) {
       return args.device_queue_in_order;
     } else {

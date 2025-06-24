@@ -46,7 +46,7 @@ public:
   }
 
   void run(std::vector<sycl::event>& events) {
-    sycl::queue& queue = args.device_queue;
+    selected_queue& queue = args.device_queue;
 
     if constexpr(include_init) {
       buff1.initialize(args.device_queue, args.problem_size);
