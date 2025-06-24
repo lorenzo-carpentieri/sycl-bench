@@ -19,7 +19,7 @@ private:
 class InitializationDummyKernel2;
 
 template <class BufferType>
-inline void forceDataTransfer(sycl::queue& q, BufferType b) {
+inline void forceDataTransfer(selected_queue& q, BufferType b) {
   q.submit([&](sycl::handler& cgh) {
     auto acc = b.template get_access<sycl::access::mode::read>(cgh);
     cgh.single_task(InitializationDummyKernel{acc});
@@ -28,7 +28,7 @@ inline void forceDataTransfer(sycl::queue& q, BufferType b) {
 }
 
 template <class BufferType>
-inline void forceDataAllocation(sycl::queue& q, BufferType b) {
+inline void forceDataAllocation(selected_queue& q, BufferType b) {
   q.submit([&](sycl::handler& cgh) {
     auto acc = b.template get_access<sycl::access::mode::discard_write>(cgh);
     cgh.single_task(InitializationDummyKernel{acc});
@@ -39,18 +39,18 @@ inline void forceDataAllocation(sycl::queue& q, BufferType b) {
 template <class T, int Dimensions = 1>
 class PrefetchedBuffer {
 public:
-  void initialize(sycl::queue& q, sycl::range<Dimensions> r) {
+  void initialize(selected_queue& q, sycl::range<Dimensions> r) {
     buff = std::make_shared<sycl::buffer<T, Dimensions>>(r);
     forceDataAllocation(q, *buff);
   }
 
-  void initialize(sycl::queue& q, T* data, sycl::range<Dimensions> r) {
+  void initialize(selected_queue& q, T* data, sycl::range<Dimensions> r) {
     buff = std::make_shared<sycl::buffer<T, Dimensions>>(data, r);
     buff->set_write_back(false);
     forceDataTransfer(q, *buff);
   }
 
-  void initialize(sycl::queue& q, const T* data, sycl::range<Dimensions> r) {
+  void initialize(selected_queue& q, const T* data, sycl::range<Dimensions> r) {
     buff = std::make_shared<sycl::buffer<T, Dimensions>>(data, r);
     buff->set_write_back(false);
     forceDataTransfer(q, *buff);
@@ -137,7 +137,7 @@ protected:
   T* _host_ptr;
   sycl::range<dim> _count;
   std::size_t total_size;
-  sycl::queue* queue;
+  selected_queue* queue;
 
 public:
   USMBuffer() : _data(nullptr), _host_ptr(nullptr), _count(getRange()), total_size(0), queue(nullptr) {}
@@ -154,12 +154,12 @@ public:
   }
 
   template <typename U = T, typename = detail::has_dim_t<U, dim, 1>>
-  void initialize(sycl::queue& q, size_t count) {
+  void initialize(selected_queue& q, size_t count) {
     queue = &q;
     allocate(count);
   }
 
-  void initialize(sycl::queue& q, sycl::range<dim> count) {
+  void initialize(selected_queue& q, sycl::range<dim> count) {
     queue = &q;
     allocate(count);
   }

@@ -19,7 +19,7 @@
 #include "benchmark_hook.h"
 #include "benchmark_traits.h"
 #include "energy_metrics.h"
-#include "prefetched_buffer.h"
+// #include "prefetched_buffer.h"
 #include "queue_macro.h"
 #include "memory_wrappers.h"
 #include "time_metrics.h"
