@@ -61,6 +61,7 @@ public:
     try {
       // Run until we have as many runs as requested or until
       // verification fails
+      double total_energy=0;
       for(std::size_t run = 0; run < args.num_runs && all_runs_pass; ++run) {
         Benchmark b(args, additionalArgs...);
 
@@ -121,7 +122,6 @@ public:
           time_metrics.markAsUnavailable("system-time");
         }
         if(detail::BenchmarkTraits<Benchmark>::supportsQueueProfiling) {
-          double total_energy = 0;
 #if defined(__ENABLED_SYNERGY) && defined(SYNERGY_KERNEL_PROFILING)
           for(sycl::event& e : run_events) {
             double energy = args.device_queue.kernel_energy_consumption(e);
@@ -131,8 +131,10 @@ public:
           total_energy=0;
 #endif
 #if defined(__ENABLED_SYNERGY) && defined(SYNERGY_DEVICE_PROFILING)
-          total_energy = args.device_queue.device_energy_consumption();
-          energy_metrics.addEnergyResult("device-energy", total_energy);
+          // The queue is create once at the start so the device_energy_consumption method return the energy consumed by all run of the same benchmark. To print the device energy consumption of a single run I have to remove the privious total energy conusmpion
+          double energy = args.device_queue.device_energy_consumption() - total_energy; 
+          total_energy += energy;
+          energy_metrics.addEnergyResult("device-energy", energy);
 #endif
         }
 
