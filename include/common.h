@@ -61,8 +61,17 @@ public:
     try {
       // Run until we have as many runs as requested or until
       // verification fails
-      double total_energy=0;
+      
+      // There is one queue for all the run so the device_energy_consumption() method compute the energy of the device using as starting
+      // point the creation time of the queue.
+      // This varialble store at i-th run of the benchmakr the energy consumed by the previous benchmark
+      // Using this value we can compute the device energy consumption for a single run as device_energy_consumption() - device_energy
+      double device_energy=0;
+      
+
       for(std::size_t run = 0; run < args.num_runs && all_runs_pass; ++run) {
+        double kernel_energy=0; // Reset kernel energy values for each run of the benchmark
+
         Benchmark b(args, additionalArgs...);
 
         for(auto h : hooks) h->preSetup();
@@ -123,17 +132,18 @@ public:
         }
         if(detail::BenchmarkTraits<Benchmark>::supportsQueueProfiling) {
 #if defined(__ENABLED_SYNERGY) && defined(SYNERGY_KERNEL_PROFILING)
-          for(sycl::event& e : run_events) {
+          for(sycl::event& e : run_events) {  // each benchmark can run multiple kernels
             double energy = args.device_queue.kernel_energy_consumption(e);
-            total_energy += energy;
+            kernel_energy += energy;
           }
-          energy_metrics.addEnergyResult("kernel-energy", total_energy);
-          total_energy=0;
+          energy_metrics.addEnergyResult("kernel-energy", kernel_energy);
+          
 #endif
+//TODO: fix the problem here. With kernel profiling and device profiling we still have the problem of increased energy consumption for everry run
 #if defined(__ENABLED_SYNERGY) && defined(SYNERGY_DEVICE_PROFILING)
           // The queue is create once at the start so the device_energy_consumption method return the energy consumed by all run of the same benchmark. To print the device energy consumption of a single run I have to remove the privious total energy conusmpion
-          double energy = args.device_queue.device_energy_consumption() - total_energy; 
-          total_energy += energy;
+          double energy = args.device_queue.device_energy_consumption() - device_energy; 
+          device_energy += energy;
           energy_metrics.addEnergyResult("device-energy", energy);
 #endif
         }
