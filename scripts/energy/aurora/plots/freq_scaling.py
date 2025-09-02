@@ -8,8 +8,38 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize
 from matplotlib.cm import ScalarMappable
 from matplotlib.lines import Line2D
+from paretoset import paretoset
 
 DEFAULT_CORE_FREQ = 900  # in MHz
+
+
+def print_pareto(df):
+    df_speedup_energy = pd.DataFrame({"speedup": df['Speedup'], "energy": df['Normalized Energy']})
+    mask = paretoset(df_speedup_energy, sense=["max", "min"])
+    pset = df_speedup_energy[mask]
+    pset = pset.sort_values(by=["speedup"])
+    
+    np_array = pset.to_numpy()
+    pset_size = len(pset["speedup"])
+    
+    cur_xlim_left, cur_xlim_right = plt.xlim()
+    cur_xlim_bottom, cur_ylim_top = plt.ylim()
+    x1, y1 = [cur_xlim_left, np_array[0][0]], [np_array[0][1], np_array[0][1]]
+    plt.plot(x1, y1, color="red", linewidth=2.5, label="Pareto Front")
+
+    for i in range(pset_size):
+        if not (i == pset_size-1):
+            current_x = np_array[i][0]
+            current_y = np_array[i][1]
+            next_x = np_array[i+1][0]
+            next_y = np_array[i+1][1]
+            x1, y1 = [current_x, current_x], [current_y, next_y]
+            x2, y2 = [current_x, next_x], [next_y, next_y]
+            plt.plot(x1, y1, x2, y2, color="red", linewidth=2.5)
+
+    last_point = np_array[pset_size-1]
+    x1, y1 = [last_point[0], last_point[0]], [last_point[1], cur_ylim_top]
+    plt.plot(x1, y1, color="red", linewidth=2.5)
 
 
 def parase_csv(input_csv, benchmarks):
@@ -67,7 +97,9 @@ def generate_plot(df, benchmark, out_plot):
     plt.title(f'Frequency Scaling: {benchmark}')
     scatter.legend_.remove()
     legend_elements = [
-        Line2D([0], [0], marker='X', color='black', label=f'Default Freq. ({DEFAULT_CORE_FREQ} MHz)', markersize=10, linestyle='None')
+        Line2D([0], [0], marker='X', color='black', label=f'Default Freq. ({DEFAULT_CORE_FREQ} MHz)', markersize=10, linestyle='None'),
+        Line2D([0], [0], color='red', label=f'Pareto Frontier', markersize=5, linewidth=2.5),
+        
     ]
     plt.legend(handles=legend_elements, loc='best')
     
@@ -80,6 +112,7 @@ def generate_plot(df, benchmark, out_plot):
     cbar.set_ticklabels([str(int(tick)) for tick in np.linspace(200, 1600, num=8)])
     cbar.set_label('Core Frequency (MHz)')
 
+    print_pareto(df)
     plt.tight_layout()
     os.makedirs(os.path.abspath(out_plot), exist_ok=True)
     plt.savefig(f"{out_plot}/{benchmark}.pdf", format='pdf')
