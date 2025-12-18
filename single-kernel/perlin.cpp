@@ -1,5 +1,5 @@
 #include <iostream>
-#include <sycl.hpp>
+#include <sycl/sycl.hpp>
 
 #include "common.h"
 
