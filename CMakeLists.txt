@@ -153,7 +153,7 @@ set(benchmarks
   polybench/syrk.cpp
 
   # compiletime/compiletime.cpp
-  spec_constants/spec_constant_convolution.cpp
+  sycl2020/spec_constants/spec_constant_convolution.cpp
   sycl2020/atomics/atomic_reduction.cpp
   sycl2020/USM/usm_accessors_latency.cpp
   sycl2020/USM/usm_instr_mix.cpp
