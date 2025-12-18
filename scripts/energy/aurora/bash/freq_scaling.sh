@@ -4,17 +4,19 @@
 #PBS -l select=1:ncpus=1:ngpus=1
 #PBS -l walltime=00:10:00
 #PBS -l filesystems=home
-#PBS -o /home/lcarpent/energy-workspace/sycl-bench/pbs-out/out_geopm_freq_scaling.txt
-#PBS -e /home/lcarpent/energy-workspace/sycl-bench/pbs-out/error_geopm_freq_scaling.txt
+#PBS -o /home/lcarpent/energy-workspace/journals/SYnergyTPDS/pbs-out/out_geopm_freq_scaling.txt
+#PBS -e /home/lcarpent/energy-workspace/journals/SYnergyTPDS/pbs-out/error_geopm_freq_scaling.txt
 #PBS -q debug
 
 # Load required modules or source oneAPI environment
 module load geopm-runtime
-source /opt/aurora/24.347.0/oneapi/setvars.sh
+source /opt/aurora/25.190.0/oneapi/setvars.sh
 
 # /home/lcarpent/energy-workspace/SYnergy/build/samples/matrix_mul  
 export  ZES_ENABLE_SYSMAN=1
+export ZE_ENABLE_PCI_ID_DEVICE_ORDER=1
 export ONEAPI_DEVICE_SELECTOR=level_zero:0
+export ZE_FLAT_DEVICE_HIERARCHY=FLAT
 # path to the applicaiton to run
 # path_app=$1
 # # specify the frequency to set
