@@ -80,6 +80,7 @@ public:
         if (timingResults.size() > 1 && args.warmup_run) {
           ++timesBegin;
         }
+        // nanoseconds to seconds conversion
         std::transform(timesBegin, timingResults.at(name).end(), std::back_inserter(resultsSeconds),
             [](auto r) { return r.count() / 1.0e9; });
         std::sort(resultsSeconds.begin(), resultsSeconds.end());
