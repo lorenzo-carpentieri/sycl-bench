@@ -132,28 +132,29 @@ public:
   }
 
   void run(std::vector<s::event>& events) {
-    events.push_back(args.device_queue.submit([&](s::handler& cgh) {
-      auto flowMap_acc = buf_flowMap.get_access<s::access::mode::read>(cgh);
-      auto output_acc = buf_output.get_access<s::access::mode::write>(cgh);
+    for(size_t i = 0; i < num_iters; i++) {
+      
+      events.push_back(args.device_queue.submit([&](s::handler& cgh) {
+        auto flowMap_acc = buf_flowMap.get_access<s::access::mode::read>(cgh);
+        auto output_acc = buf_output.get_access<s::access::mode::write>(cgh);
 
-      // size_t szLocalWorkSize = local_size;
-      // float multiplier = size/(float)szLocalWorkSize;
-      // if(multiplier > (int)multiplier)
-      // 	multiplier += 1;
-      // size_t szGlobalWorkSize = (int)multiplier * szLocalWorkSize;
+        // size_t szLocalWorkSize = local_size;
+        // float multiplier = size/(float)szLocalWorkSize;
+        // if(multiplier > (int)multiplier)
+        // 	multiplier += 1;
+        // size_t szGlobalWorkSize = (int)multiplier * szLocalWorkSize;
 
-      s::range<1> ndrange{size};
+        s::range<1> ndrange{size};
 
-      cgh.parallel_for<class FtleKernel>(
-          ndrange, [=, width_ = width, dataCellSize = cellSize, advectionTime_ = advectionTime, num_elements = size,
-                       num_iters = num_iters](s::id<1> id) {
-            int gid = id[0];
-            if(gid >= num_elements)
-              return;
-            int tx = gid % width_;
-            int ty = gid / width_;
+        cgh.parallel_for<class FtleKernel>(
+            ndrange, [=, width_ = width, dataCellSize = cellSize, advectionTime_ = advectionTime, num_elements = size,
+                        num_iters = num_iters](s::id<1> id) {
+              int gid = id[0];
+              if(gid >= num_elements)
+                return;
+              int tx = gid % width_;
+              int ty = gid / width_;
 
-            for(size_t i = 0; i < num_iters; i++) {
               if(tx >= 1 && tx < (width_ - 1) && ty >= 1 && ty < num_elements / width_ - 1) {
                 s::float2 left = flowMap_acc[gid - 1];
                 s::float2 right = flowMap_acc[gid + 1];
@@ -184,9 +185,9 @@ public:
 
                 output_acc[gid] = 1 / s::fabs(advectionTime_) * s::log(s::sqrt(maxEigenvalue));
               }
-            }
-          });
-    }));
+            });
+      }));
+    }
   }
 
   bool verify(VerificationSetting& ver) { return true; }

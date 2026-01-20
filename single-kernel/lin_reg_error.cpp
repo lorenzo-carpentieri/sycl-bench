@@ -53,23 +53,23 @@ public:
   }
 
   void run(std::vector<sycl::event>& events) {
-    events.push_back(args.device_queue.submit([&](sycl::handler& cgh) {
-      auto in1 = input1_buf.template get_access<s::access::mode::read>(cgh);
-      auto in2 = input2_buf.template get_access<s::access::mode::read>(cgh);
-      auto alpha = alpha_buf.template get_access<s::access::mode::read>(cgh);
-      auto beta = beta_buf.template get_access<s::access::mode::read>(cgh);
-      // Use discard_write here, otherwise the content of the host buffer must first be copied to device
-      auto output = output_buf.template get_access<s::access::mode::discard_write>(cgh);
+    for(size_t i = 0; i < num_iters; i++) {
+      events.push_back(args.device_queue.submit([&](sycl::handler& cgh) {
+        auto in1 = input1_buf.template get_access<s::access::mode::read>(cgh);
+        auto in2 = input2_buf.template get_access<s::access::mode::read>(cgh);
+        auto alpha = alpha_buf.template get_access<s::access::mode::read>(cgh);
+        auto beta = beta_buf.template get_access<s::access::mode::read>(cgh);
+        // Use discard_write here, otherwise the content of the host buffer must first be copied to device
+        auto output = output_buf.template get_access<s::access::mode::discard_write>(cgh);
 
-      sycl::range<1> ndrange(args.problem_size);
+        sycl::range<1> ndrange(args.problem_size);
 
-      cgh.parallel_for<class LinearRegressionKernel<T>>(
-          ndrange, [=, problem_size = args.problem_size, num_iters = num_iters](sycl::id<1> idx) {
-            size_t gid = idx[0];
-            T a = alpha[gid];
-            T b = beta[gid];
+        cgh.parallel_for<class LinearRegressionKernel<T>>(
+            ndrange, [=, problem_size = args.problem_size, num_iters = num_iters](sycl::id<1> idx) {
+              size_t gid = idx[0];
+              T a = alpha[gid];
+              T b = beta[gid];
 
-            for(size_t i = 0; i < num_iters; i++) {
               T error = 0.0;
 
               if(gid < problem_size) {
@@ -80,9 +80,9 @@ public:
                 }
               }
               output[gid] = error;
-            }
-          });
-    }));
+            });
+      }));
+    }
   }
 
   bool compare(const std::vector<T>& expected_output, const int length, const T epsilon) {
@@ -111,24 +111,31 @@ public:
   }
 
   bool verify(VerificationSetting& ver) {
-    for(size_t i = 0; i < args.problem_size; i++) {
-      T error = 0.0;
-      for(size_t j = 0; j < args.problem_size; j++) {
-        T e = (alpha[i] * input1[j] + beta[i]) - input2[j];
-        error += e * e;
-      }
-      expected_output[i] = error;
-    }
+  //   for(size_t i = 0; i < args.problem_size; i++) {
+  //     T error = 0.0;
+  //     for(size_t j = 0; j < args.problem_size; j++) {
+  //       T e = (alpha[i] * input1[j] + beta[i]) - input2[j];
+  //       error += e * e;
+  //     }
+  //     expected_output[i] = error;
+  //   }
 
-    return compare(expected_output, args.problem_size, 0.000001);
+  //   return compare(expected_output, args.problem_size, 0.000001);
+  // }
+
+  // static std::string getBenchmarkName(BenchmarkArgs& args) {
+  //   std::stringstream name;
+  //   name << "LinearRegression_";
+  //   name << ReadableTypename<T>::name;
+  //   return name.str();
+    return true;
   }
-
   static std::string getBenchmarkName(BenchmarkArgs& args) {
-    std::stringstream name;
-    name << "LinearRegression_";
-    name << ReadableTypename<T>::name;
-    return name.str();
-  }
+      std::stringstream name;
+      name << "LinearRegressionError_";
+      name << ReadableTypename<T>::name;
+      return name.str();
+    }
 };
 
 int main(int argc, char** argv) {

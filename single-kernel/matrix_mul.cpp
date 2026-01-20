@@ -24,8 +24,7 @@ public:
   void operator()(s::id<2> gid) const {
     int gidx = gid.get(0);
     int gidy = gid.get(1);
-    for(int iter = 0; iter < num_iters; iter++)
-      for(int k = 0; k < size; k++) out[gidx * size + gidy] += in_A[gidx * size + k] * in_B[k * size + gidy];
+    for(int k = 0; k < size; k++) out[gidx * size + gidy] += in_A[gidx * size + k] * in_B[k * size + gidy];
   }
 };
 
@@ -64,12 +63,15 @@ public:
   }
 
   void run(std::vector<sycl::event>& events) {
-    events.push_back(args.device_queue.submit([&](s::handler& cgh) {
-      auto acc_a = a_buf.template get_access<s::access_mode::read>(cgh);
-      auto acc_b = b_buf.template get_access<s::access_mode::read>(cgh);
-      auto acc_c = c_buf.template get_access<s::access_mode::read_write>(cgh);
-      cgh.parallel_for(s::range<2>{size, size}, matrixMul<T>(size, num_iters, acc_a, acc_b, acc_c)); // end parallel for
-    })); // end events.push back
+    for(size_t i = 0; i < num_iters; i++) {
+
+      events.push_back(args.device_queue.submit([&](s::handler& cgh) {
+        auto acc_a = a_buf.template get_access<s::access_mode::read>(cgh);
+        auto acc_b = b_buf.template get_access<s::access_mode::read>(cgh);
+        auto acc_c = c_buf.template get_access<s::access_mode::read_write>(cgh);
+        cgh.parallel_for(s::range<2>{size, size}, matrixMul<T>(size, num_iters, acc_a, acc_b, acc_c)); // end parallel for
+      })); // end events.push back
+    }
   }
 
 

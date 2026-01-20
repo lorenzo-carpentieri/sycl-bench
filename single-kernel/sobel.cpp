@@ -2,8 +2,10 @@
 #include <sycl/sycl.hpp>
 
 #include "bitmap.h"
+#include <filesystem>
 #include "common.h"
 
+namespace fs = std::filesystem;
 
 namespace s = sycl;
 class SobelBenchKernel; // kernel forward declaration
@@ -34,7 +36,7 @@ public:
     num_iters = args.num_iterations;
 
     input.resize(size * size);
-    load_bitmap_mirrored("../share/Brommy.bmp", size, input);
+    load_bitmap_mirrored("/home/lcarpent/energy-workspace/journals/SYnergyTPDS/sycl-bench/share/Brommy.bmp", size, input);
     output.resize(size * size);
 
     input_buf.initialize(args.device_queue, input.data(), s::range<2>(size, size));

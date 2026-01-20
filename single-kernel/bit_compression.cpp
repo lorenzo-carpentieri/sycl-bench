@@ -50,20 +50,19 @@ public:
   }
 
   void run(std::vector<s::event>& events) {
-    events.push_back(args.device_queue.submit([&](s::handler& cgh) {
-      auto input_acc = buf_input.get_access<s::access::mode::read>(cgh);
-      auto num_bits_acc = buf_bits.get_access<s::access::mode::read>(cgh);
-      auto output_acc = buf_output.get_access<s::access::mode::write>(cgh);
+    for(size_t i = 0; i < num_iters; i++){
+      events.push_back(args.device_queue.submit([&](s::handler& cgh) {
+        auto input_acc = buf_input.get_access<s::access::mode::read>(cgh);
+        auto num_bits_acc = buf_bits.get_access<s::access::mode::read>(cgh);
+        auto output_acc = buf_output.get_access<s::access::mode::write>(cgh);
 
 
-      s::range<1> ndrange{size};
-
-      cgh.parallel_for<class BitCompressionKernel>(
-          ndrange, [input_acc, num_bits_acc, output_acc, size_ = size, num_iters = num_iters](s::id<1> id) {
-            int gid = id[0];
-            if(gid >= size_)
-              return;
-            for(size_t i = 0; i < num_iters; i++) {
+        s::range<1> ndrange{size};
+        cgh.parallel_for<class BitCompressionKernel>(
+            ndrange, [input_acc, num_bits_acc, output_acc, size_ = size, num_iters = num_iters](s::id<1> id) {
+              int gid = id[0];
+              if(gid >= size_)
+                return;
               s::uint4 in = input_acc[gid];
               int bits = num_bits_acc[gid];
               uint tmp = 0;
@@ -84,9 +83,9 @@ public:
                 tmp |= (in.w() << (20 - bits)) & 255u;
               }
               output_acc[gid] = tmp;
-            }
-          });
-    }));
+            });
+      }));
+    }
   }
 
   bool verify(VerificationSetting& ver) { return true; }

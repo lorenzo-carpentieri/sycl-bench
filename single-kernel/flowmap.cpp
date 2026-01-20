@@ -95,25 +95,25 @@ public:
   }
 
   void run(std::vector<s::event>& events) {
-    events.push_back(args.device_queue.submit([&](s::handler& cgh) {
-      auto data_acc = buf_data.get_access<s::access::mode::read>(cgh);
-      auto timesteps_acc = buf_timesteps.get_access<s::access::mode::read>(cgh);
-      auto output_acc = buf_flowMap.get_access<s::access::mode::write>(cgh);
+    for(size_t i = 0; i < num_iters; i++) {
+      events.push_back(args.device_queue.submit([&](s::handler& cgh) {
+        auto data_acc = buf_data.get_access<s::access::mode::read>(cgh);
+        auto timesteps_acc = buf_timesteps.get_access<s::access::mode::read>(cgh);
+        auto output_acc = buf_flowMap.get_access<s::access::mode::write>(cgh);
 
-      s::range<1> ndrange{size};
+        s::range<1> ndrange{size};
 
-      cgh.parallel_for<class FlowMapKernel>(
-          ndrange, [=, width_ = width, dataOrigin = origin, dataCellSize = cellSize, numTimesteps_ = numTimesteps,
-                       startTime_ = startTime, advectionTime_ = advectionTime, num_elements = size,
-                       num_iters = num_iters](s::id<1> id) {
-            int gid = id[0];
-            if(gid >= num_elements)
-              return;
+        cgh.parallel_for<class FlowMapKernel>(
+            ndrange, [=, width_ = width, dataOrigin = origin, dataCellSize = cellSize, numTimesteps_ = numTimesteps,
+                        startTime_ = startTime, advectionTime_ = advectionTime, num_elements = size,
+                        num_iters = num_iters](s::id<1> id) {
+              int gid = id[0];
+              if(gid >= num_elements)
+                return;
 
-            int tx = gid % width_;
-            int ty = gid / width_;
+              int tx = gid % width_;
+              int ty = gid / width_;
 
-            for(size_t i = 0; i < num_iters; i++) {
               const unsigned int numSteps = 1000;
               float timestep = advectionTime_ / numSteps;
 
@@ -198,9 +198,9 @@ public:
                 pos.y() += interpolated.y() * timestep;
               }
               output_acc[gid] = pos;
-            }
-          });
-    }));
+            });
+      }));
+    }
   }
 
   bool verify(VerificationSetting& ver) { return true; }

@@ -32,24 +32,22 @@ class box_blur{
           sycl::id<2> gid = it.get_global_id();
           int x = gid[0];
           int y = gid[1];
-          for(size_t i = 0; i < num_iters; i++) {
 
-            if(x < size && y < size) {
-              sycl::float4 sum_neigh{0, 0, 0, 0};
-              int hits = 0;
-              for(int ox = -RADIUS; ox < RADIUS + 1; ++ox) {
-                for(int oy = -RADIUS; oy < RADIUS + 1; ++oy) {
-                  // image boundary check
-                  if((x + ox) > -1 && (x + ox) < size && (y + oy) > -1 && (y + oy) < size) {
-                    sum_neigh = sum_neigh + in[x + ox][y + oy];
-                    hits++;
-                  }
+          if(x < size && y < size) {
+            sycl::float4 sum_neigh{0, 0, 0, 0};
+            int hits = 0;
+            for(int ox = -RADIUS; ox < RADIUS + 1; ++ox) {
+              for(int oy = -RADIUS; oy < RADIUS + 1; ++oy) {
+                // image boundary check
+                if((x + ox) > -1 && (x + ox) < size && (y + oy) > -1 && (y + oy) < size) {
+                  sum_neigh = sum_neigh + in[x + ox][y + oy];
+                  hits++;
                 }
               }
-              sycl::float4 mean_neigh{sum_neigh.x() / hits, sum_neigh.y() / hits, sum_neigh.z() / hits, 0};
-              out[gid] = mean_neigh;
-                  
             }
+            sycl::float4 mean_neigh{sum_neigh.x() / hits, sum_neigh.y() / hits, sum_neigh.z() / hits, 0};
+            out[gid] = mean_neigh;
+                
           }
         }
 };
@@ -86,7 +84,7 @@ public:
     num_iters = args.num_iterations;
 
     input.resize(size * size);
-    load_bitmap_mirrored("../../share/Brommy.bmp", size, input);
+    load_bitmap_mirrored("/home/lcarpent/energy-workspace/journals/SYnergyTPDS/sycl-bench/share/Brommy.bmp", size, input);
     output.resize(size * size);
 
     input_buf.initialize(args.device_queue, input.data(), s::range<2>(size, size));
@@ -94,14 +92,16 @@ public:
   }
 
   void run(std::vector<sycl::event>& events) {
-    events.push_back(args.device_queue.submit([&](sycl::handler& cgh) {
-      auto in = input_buf.get_access<s::access::mode::read>(cgh);
-      auto out = output_buf.get_access<s::access::mode::read_write>(cgh);
-      sycl::nd_range<2> ndrange{sycl::range<2>(size,size), sycl::range<2>{16,16}};
+    for(size_t i = 0; i < num_iters; i++){
+      events.push_back(args.device_queue.submit([&](sycl::handler& cgh) {
+        auto in = input_buf.get_access<s::access::mode::read>(cgh);
+        auto out = output_buf.get_access<s::access::mode::read_write>(cgh);
+        sycl::nd_range<2> ndrange{sycl::range<2>(size,size), sycl::range<2>{16,16}};
 
-      cgh.parallel_for<class BoxBlurBenchKernel>(
-          ndrange, box_blur(in, out, size, num_iters));
-    }));
+        cgh.parallel_for<class BoxBlurBenchKernel>(
+            ndrange, box_blur(in, out, size, num_iters));
+      }));
+    }
   }
 
 

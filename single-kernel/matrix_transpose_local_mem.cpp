@@ -53,17 +53,15 @@ class matrix_transpose{
             yIndex = block_x * TILE_DIM + local_id_y;
             int index_out = xIndex + (yIndex) * size;
             
-            for(int iter = 0; iter< num_iters; iter++){
-                // Copy data in local memory
-                for (int i=0; i<TILE_DIM; i+=BLOCK_ROWS) {
-                    tile[local_id_y+i][local_id_x] = in_matrix[index_in+i*size];
-                }
-                
-                group_barrier(group);
+            // Copy data in local memory
+            for (int i=0; i<TILE_DIM; i+=BLOCK_ROWS) {
+                tile[local_id_y+i][local_id_x] = in_matrix[index_in+i*size];
+            }
+            
+            group_barrier(group);
 
-                for (int i=0; i<TILE_DIM; i+=BLOCK_ROWS) {
-                    out_matrix[index_out+i*size] = tile[local_id_x][local_id_y+i];
-                }
+            for (int i=0; i<TILE_DIM; i+=BLOCK_ROWS) {
+                out_matrix[index_out+i*size] = tile[local_id_x][local_id_y+i];
             }
         }
 
@@ -103,17 +101,18 @@ public:
   }
 
   void run(std::vector<sycl::event>& events) {
-    events.push_back(
-        args.device_queue.submit([&](handler &cgh){
-            range<2> grid {BLOCK_ROWS * (size / TILE_DIM), TILE_DIM * (size / TILE_DIM)}; 
-            range<2> block{BLOCK_ROWS, TILE_DIM};
-            auto acc_in = in_buf.template get_access<access_mode::read>(cgh);
-            auto acc_out = out_buf.template get_access<access_mode::read_write>(cgh);
-            local_accessor<float, 2> tile {range<2>{TILE_DIM, TILE_DIM+1}, cgh};
-            cgh.parallel_for(nd_range<2>{grid, block}, matrix_transpose(acc_in, acc_out, tile, size, num_iters));//end parallel for
-        })
-    );// end events.push back
-    
+    for(size_t iter = 0; iter < num_iters; iter++){
+      events.push_back(
+          args.device_queue.submit([&](handler &cgh){
+              range<2> grid {BLOCK_ROWS * (size / TILE_DIM), TILE_DIM * (size / TILE_DIM)}; 
+              range<2> block{BLOCK_ROWS, TILE_DIM};
+              auto acc_in = in_buf.template get_access<access_mode::read>(cgh);
+              auto acc_out = out_buf.template get_access<access_mode::read_write>(cgh);
+              local_accessor<float, 2> tile {range<2>{TILE_DIM, TILE_DIM+1}, cgh};
+              cgh.parallel_for(nd_range<2>{grid, block}, matrix_transpose(acc_in, acc_out, tile, size, num_iters));//end parallel for
+          })
+      );// end events.push back
+    }
   }
 
 
