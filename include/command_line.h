@@ -23,6 +23,8 @@
 #include <unordered_set>
 #include <vector>
 
+#include "utils.h"
+
 using CommandLineArguments = std::unordered_map<std::string, std::string>;
 using FlagList = std::unordered_set<std::string>;
 
@@ -178,6 +180,8 @@ public:
     #endif
 #ifdef __ENABLED_SYNERGY
     q.set_target_frequencies(memory_freq, core_freq);
+    q.get_synergy_device().set_core_frequency(core_freq);
+    polling_freq(q, core_freq, 1000);
 #endif
 
     bool verification_enabled = true;
