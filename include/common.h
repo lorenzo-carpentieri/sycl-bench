@@ -66,7 +66,6 @@ public:
       // point the creation time of the queue.
       // This varialble store at i-th run of the benchmakr the energy consumed by the previous benchmark
       // Using this value we can compute the device energy consumption for a single run as device_energy_consumption() - device_energy
-      double device_energy=0;
       
 
       for(std::size_t run = 0; run < args.num_runs && all_runs_pass; ++run) {
@@ -82,10 +81,12 @@ public:
         for(auto h : hooks) h->postSetup();
 
         std::vector<sycl::event> run_events;
-        run_events.reserve(1024); // Make sure we don't need to resize during benchmarking.
+        // run_events.reserve(1024); // Make sure we don't need to resize during benchmarking.
 
         // Performance critical measurement section starts here
         for(auto h : hooks) h->preKernel();
+        double device_energy_setup=args.device_queue.device_energy_consumption(); // Store the energy consumed by the device after the setup phase
+
         const auto before = std::chrono::high_resolution_clock::now();
         if constexpr(detail::BenchmarkTraits<Benchmark>::supportsQueueProfiling) {
           b.run(run_events);
@@ -139,11 +140,14 @@ public:
           energy_metrics.addEnergyResult("kernel-energy", kernel_energy);
           
 #endif
-//TODO: fix the problem here. With kernel profiling and device profiling we still have the problem of increased energy consumption for everry run
+/*  Energy profiling: the synergy queue is built once at the start and for all the execution the same SYCL queue is used.
+    In order to get the energy consumption of a single run of a benchmark we have to store the energy consumed by the queue after the setup phase
+    and then for each run we can compute the energy consumed during the run as the difference between the energy cosumed by the device at the end of the run 
+    minus the energy consumed at the end of the setup phase.
+*/
 #if defined(__ENABLED_SYNERGY) && defined(SYNERGY_DEVICE_PROFILING)
           // The queue is create once at the start so the device_energy_consumption method return the energy consumed by all run of the same benchmark. To print the device energy consumption of a single run I have to remove the privious total energy conusmpion
-          double energy = args.device_queue.device_energy_consumption() - device_energy; 
-          device_energy += energy;
+          double energy = args.device_queue.device_energy_consumption() - device_energy_setup; 
           energy_metrics.addEnergyResult("device-energy", energy);
 #endif
         }
@@ -157,7 +161,7 @@ public:
             }
           }
         }
-      }
+      } // end num_runs loop
     } catch(...) {
       args.result_consumer->discard();
       std::rethrow_exception(std::current_exception());
